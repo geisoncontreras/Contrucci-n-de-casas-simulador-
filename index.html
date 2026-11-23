@@ -344,7 +344,7 @@ const TOOLS=[['cuarto','Habitación','Arrastra en diagonal sobre el suelo: se le
  ['techo','Techo','Elige abajo la forma y el material del techo.'],
  ['tierra','Terreno','Toca o arrastra sobre el terreno para subir, bajar, aplanar o restaurar la tierra. La plataforma de la casa se ajusta con los botones de abajo.'],
  ['elegir','Elegir','Toca algo para editarlo. Arrastra muebles, puertas y ventanas para moverlos.'],
- ['borrar','Borrar','Toca lo que quieras quitar. Abajo eliges cómo se borran los muros.'],
+ ['borrar','Borrar','Toca lo que quieras quitar. Los muros se borran pedazo a pedazo: arrastra el dedo para seguir borrando.'],
  ['mano','Mover','Arrastra con un dedo para mover el escenario de lugar (con el mouse, para girar). Dos dedos giran y acercan.']];
 const WIN={estandar:{n:'Ventana',wd:1.2,y1:0.9,y2:1.9,st:'abat'},corredera:{n:'Corredera',wd:1.8,y1:0.9,y2:2.0,st:'corr'},doble:{n:'Doble hoja',wd:1.5,y1:0.9,y2:1.9,st:'doble'},
  cocina:{n:'De cocina',wd:1.0,y1:1.1,y2:1.9,st:'abat'},alta:{n:'Alta de baño',wd:0.6,y1:1.55,y2:1.95,st:'basc'},redonda:{n:'Ojo de buey',wd:0.6,y1:1.2,y2:1.8,st:'red'},
@@ -705,7 +705,8 @@ function refresh(){drawPlan();drawFx()}
 function live(){G=geo();drawPlan();build3D()}
 function refreshSel(){drawPlan();build3D();renderPanel();renderSub()}
 /* cortar y borrar muros por partes */
-let bmode='tramo';
+let bmode='trozo',bsize=0.5;
+function erasePiece(w,t,L){const c=t*L;let a=Math.floor(c/bsize)*bsize,b=a+bsize;if(L-b<0.12)b=L;if(a<0.12)a=0;return cutWall(w,a,b)?b-a:0}
 function wallSpan(w,t){const L=Math.hypot(w.x2-w.x1,w.y2-w.y1);const sg=G.segs.filter(z=>z.wall===w.id&&z.t0!=null);for(const z of sg)if(t>=z.t0-1e-6&&t<=z.t1+1e-6)return{a:z.t0*L,b:z.t1*L,L};return{a:0,b:L,L}}
 function cutWall(w,a,b){const L=Math.hypot(w.x2-w.x1,w.y2-w.y1);a=clamp(a,0,L);b=clamp(b,0,L);if(b-a<0.05)return false;const ux=(w.x2-w.x1)/L,uy=(w.y2-w.y1)/L,q=v=>Math.round(v*1000)/1000;
  const ops=S.ops.filter(o=>o.w===w.id);S.ops=S.ops.filter(o=>o.w!==w.id);const i=S.walls.indexOf(w);S.walls.splice(i,1);const add=[];
@@ -737,6 +738,7 @@ function tDown(p,pk,src){if(!p)return;ghost=null;hover.k='';const t=tool;
  if(t==='borrar'){if(pk.furn){snap();S.furn=S.furn.filter(q=>q!==pk.furn);sel=null;commit(true);return}
   if(pk.op){snap();S.ops=S.ops.filter(q=>q.id!==pk.op.id);sel=null;commit(true);return}
   if(pk.wall){const w=pk.wall.w,L=pk.wall.L,t=pk.wall.t;
+   if(bmode==='trozo'){snap();const d=erasePiece(w,t,L);act={k:'erase',src,n:d?1:0};live();return}
    if(bmode==='cortar'){act={k:'cut',w,t0:t*L,t1:t*L,L,src};ghost={k:'cut',w,a:t*L-0.5,b:t*L+0.5,L};refresh();return}
    snap();if(bmode==='muro'){S.walls=S.walls.filter(q=>q.id!==w.id);S.ops=S.ops.filter(q=>q.w!==w.id);toast('Muro completo borrado')}
    else{const sp=wallSpan(w,t);cutWall(w,sp.a,sp.b);toast(`Tramo de ${fm(sp.b-sp.a)} m borrado`)}
@@ -758,6 +760,7 @@ function tMove(p,src){if(!act||!p)return;const a=act;
   if(n&&n.w.id!==o.w&&n.L>=o.wd+0.1){o.w=n.w.id;w=n.w}if(!w)return;const L=Math.hypot(w.x2-w.x1,w.y2-w.y1),t=clamp(((p.x-w.x1)*(w.x2-w.x1)+(p.y-w.y1)*(w.y2-w.y1))/(L*L),0,1);
   o.pos=r2(clamp(Math.round(t*L*20)/20,o.wd/2,L-o.wd/2));a.moved=true;live();return}
  if(a.k==='dig'){if(Math.hypot(p.x-a.last.x,p.y-a.last.y)<0.35)return;a.last=p;brushAt(p,a)}
+ if(a.k==='erase'){const n=nearWall(p,src==='3d'?0.5:Math.max(0.3,VB.w/40));if(n&&erasePiece(n.w,n.t,n.L)){a.n++;live()}return}
  if(a.k==='cut'){const w=a.w,t=clamp(((p.x-w.x1)*(w.x2-w.x1)+(p.y-w.y1)*(w.y2-w.y1))/a.L,0,a.L);a.t1=Math.round(t*20)/20;a.moved=Math.abs(a.t1-a.t0)>0.15;
   const lo=a.moved?Math.min(a.t0,a.t1):a.t0-0.5,hi=a.moved?Math.max(a.t0,a.t1):a.t0+0.5;ghost={k:'cut',w,a:clamp(lo,0,a.L),b:clamp(hi,0,a.L),L:a.L};refresh()}}
 function tUp(){const a=act;act=null;if(!a)return;
@@ -768,11 +771,13 @@ function tUp(){const a=act;act=null;if(!a)return;
   refresh();return}
  if(a.k==='mf'||a.k==='mop'){if(a.moved)commit(true);else{undo.pop();$('#bUndo').disabled=!undo.length}return}
  if(a.k==='dig')commit(false);
+ if(a.k==='erase'){sel=null;commit(true);if(a.n)toast(a.n>1?`${a.n} pedazos borrados`:`Pedazo de muro borrado`);return}
  if(a.k==='cut'){const g=ghost;ghost=null;if(g&&g.k==='cut'){snap();cutWall(a.w,g.a,g.b);sel=null;commit(true);toast(`Corte de ${fm(g.b-g.a)} m`)}else refresh()}}
 function hover(p,pk,src){let g=null;
  if(p&&tool==='mueble'){const q=placeF(fk,p,frot);g={k:'f',f:{k:fk,...q}}}
  else if(p&&(tool==='puerta'||tool==='ventana')){const n=(pk&&pk.wall)||nearWall(p,wtol(src))||nearWall(p,1.6);if(n){const wd=tool==='puerta'?DOOR[doorK].wd:WIN[winK].wd;if(n.L>=wd+0.1)g={k:'op',t:tool,v:tool==='ventana'?winK:doorK,w:n.w,pos:clamp(Math.round(n.t*n.L*20)/20,wd/2,n.L-wd/2),wd,L:n.L}}}
  else if(p&&tool==='tierra')g={k:'brush',x:r2(p.x),y:r2(p.y)};
+ else if(p&&tool==='borrar'&&bmode==='trozo'&&pk&&pk.wall&&!pk.furn&&!pk.op){const n=pk.wall,c=n.t*n.L;let a=Math.floor(c/bsize)*bsize,b=a+bsize;if(n.L-b<0.12)b=n.L;if(a<0.12)a=0;g={k:'cut',w:n.w,a,b,L:n.L}}
  const k=JSON.stringify(g);if(k===hover.k)return;hover.k=k;ghost=g;refresh()}
 hover.k='';
 
@@ -833,7 +838,9 @@ function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';cons
  else if(selO&&selO.t==='puerta')h=doorCards(selO.v||'simple')+opBtns(selO);
  else if(tool==='puerta')h=doorCards(doorK);
  else if(tool==='ventana')h=winCards(winK);
- else if(tool==='borrar')h='<span class="lbl">Muros:</span>'+[['tramo','Por tramos'],['cortar','Cortar un trozo'],['muro','Muro completo']].map(([k,n])=>`<button class="${bmode===k?'on':''}" data-bm="${k}">${n}</button>`).join('')+`<span class="lbl">${{tramo:'Toca un muro: se borra solo hasta el próximo encuentro',cortar:'Toca y arrastra sobre el muro para elegir el trozo',muro:'Toca un muro: se borra entero'}[bmode]}</span>`;
+ else if(tool==='borrar')h='<span class="lbl">Borrar muro:</span>'+[['trozo','Pedazo a pedazo'],['tramo','Hasta la esquina'],['cortar','Marcar un largo'],['muro','Muro entero']].map(([k,n])=>`<button class="${bmode===k?'on':''}" data-bm="${k}">${n}</button>`).join('')+
+  (bmode==='trozo'?'<span class="sep"></span><span class="lbl">Tamaño:</span>'+[[0.25,'25 cm'],[0.5,'50 cm'],[1,'1 m']].map(([v,n])=>`<button class="${bsize===v?'on':''}" data-bs="${v}">${n}</button>`).join(''):'')+
+  `<span class="lbl">${{trozo:'Cada toque borra un pedazo; arrastra el dedo sobre el muro para ir borrando',tramo:'Toca un muro: se borra hasta el próximo encuentro',cortar:'Toca y arrastra sobre el muro para elegir el largo',muro:'Toca un muro: se borra entero'}[bmode]}</span>`;
  else if(tool==='pintar')h='<span class="lbl">Color</span>'+sw('paint','visto','Material visto','repeating-linear-gradient(0deg,#b4563a 0 4px,#e3d9cc 4px 5px)',paint==='visto')+Object.entries(PAINT).map(([k,[n,c]])=>sw('paint',k,n,hex(c),paint===k)).join('');
  else if(tool==='piso')h='<span class="lbl">Piso</span>'+Object.entries(FLOOR).map(([k,[n,,bg]])=>sw('floor',k,n,bg,floorK===k,1)).join('');
  else if(tool==='tierra')h=[['subir','▲ Subir'],['bajar','▼ Bajar'],['aplanar','Aplanar'],['restaurar','Restaurar']].map(([k,n])=>`<button class="${tmode===k?'on':''}" data-tm="${k}">${n}</button>`).join('')+'<span class="sep"></span>'+
@@ -859,6 +866,7 @@ $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
  if(d.paint){paint=d.paint;renderSub();return}
  if(d.floor){floorK=d.floor;renderSub();return}
  if(d.bm){bmode=d.bm;renderSub();return}
+ if(d.bs){bsize=+d.bs;renderSub();return}
  if(d.tm){tmode=d.tm;renderSub();return}
  if(d.br){brush=+d.br;renderSub();return}
  if(d.gotool){const keep=sel;setTool(d.gotool);return}
@@ -1266,6 +1274,7 @@ function init3D(){
   const pk=pick3(e);let p=pk.p;
   if(act.k==='mop'){const o=S.ops.find(q=>q.id===act.id),w=o&&S.walls.find(q=>q.id===o.w);p=(pk.wall&&w&&pk.wall.w.id!==w.id)?pk.hp:((w&&wallPt(w))||pk.p)}
   else if(act.k==='dig')p=pk.tp||pk.p;
+  else if(act.k==='erase'){if(!pk.wall)return;const n=pk.wall;p={x:n.w.x1+(n.w.x2-n.w.x1)*n.t,y:n.w.y1+(n.w.y2-n.w.y1)*n.t}}
   tMove(p,'3d')});
  const up=e=>{P3.delete(e.pointerId);if(g3){if(!P3.size)g3=null;return}if(act)tUp()};
  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
