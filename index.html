@@ -31,6 +31,8 @@ header p{margin:0;color:var(--mut);max-width:70ch}
 @media(max-width:900px){.seg{display:flex}.panes{grid-template-columns:minmax(0,1fr)}.stage{height:clamp(560px,84vh,860px)}.stage[data-v=plan] #view{display:none}.stage[data-v=d3] #pplan{display:none}}
 #plan{position:absolute;inset:0;width:100%;height:100%;background:var(--paper);touch-action:none;display:block;user-select:none;-webkit-user-select:none}
 #view{background:#cfe0ea center/cover no-repeat}
+#mlist .pin{width:96px;min-height:36px;border:1px solid var(--line);border-radius:8px;padding:0 8px;font:600 14px Barlow,sans-serif;text-align:right;background:var(--bg);color:var(--ink)}
+.ctot{margin:16px 0;padding:12px 14px;border-radius:12px;background:var(--card);display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:17px}
 #tut{position:fixed;inset:0;z-index:60}#tut.hide{display:none}#tut.dim{background:rgba(0,0,0,.55)}
 .tut-hl{position:fixed;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.55);outline:3px solid #f0a37f;pointer-events:none;transition:all .25s}
 .tut-card{position:fixed;left:12px;right:12px;max-width:460px;margin:0 auto;background:var(--bg,#fff);color:var(--ink,#1c1d1f);border-radius:16px;padding:14px 16px;box-shadow:0 8px 30px rgba(0,0,0,.3)}
@@ -207,7 +209,7 @@ footer{padding:20px 0 40px;color:var(--mut);font-size:14px}
       <div class="g2">
         <label class="f">Pisos<select id="sP"><option value="1">1 piso</option><option value="2">2 pisos (misma planta)</option></select></label>
         <label class="f">Altura de muro (m)<input id="sH" type="number" step="0.05" min="2.2" max="3.5" inputmode="decimal"></label>
-        <label class="f">Muros<select id="sM"><option value="ladrillo">Albañilería de ladrillo</option><option value="bloque">Bloque de hormigón</option><option value="madera">Tabiquería de madera</option></select></label>
+        <label class="f">Muros (cambia todos)<select id="sM"><option value="ladrillo">Albañilería de ladrillo</option><option value="bloque">Bloque de hormigón</option><option value="madera">Tabiquería de madera</option><option value="hormigon">Hormigón armado</option><option value="piedra">Piedra</option><option value="metalcon">Metalcon (acero galvanizado)</option><option value="sip">Panel SIP</option></select></label>
         <label class="f">Cubierta<select id="sT"><option value="zinc">Plancha de zinc</option><option value="asfalto">Teja asfáltica</option><option value="arcilla">Teja de arcilla</option><option value="hormigon">Teja de hormigón</option><option value="poli">Policarbonato</option><option value="losa">Losa de hormigón</option><option value="verde">Techo verde</option></select></label>
         <label class="f">Forma del techo<select id="sR"><option value="dos">Dos aguas</option><option value="cuatro">Cuatro aguas</option><option value="una">Una agua</option><option value="asim">Dos aguas desigual</option><option value="mansarda">Mansarda</option><option value="curvo">Curvo</option><option value="mariposa">Mariposa</option><option value="plano">Plano (pendiente suave)</option></select></label>
         <label class="f">Pérdidas / merma (%)<input id="sW" type="number" step="1" min="0" max="30" inputmode="numeric"></label>
@@ -460,7 +462,10 @@ const FURN={
  cercom:{n:'Cerco de madera (2 m)',s:'',c:'Jardín',w:2.0,d:0.1,wall:0,pc:'#b48a62'},columpio:{n:'Columpio',s:'',c:'Jardín',w:2.2,d:1.2,wall:0,pc:'#c8a97e'},
  macetag:{n:'Macetero grande',s:'',c:'Jardín',w:0.9,d:0.9,wall:0,pc:'#c97b5b'},farol:{n:'Farol de jardín',s:'',c:'Jardín',w:0.3,d:0.3,wall:0,pc:'#3a3c40'}};
 const CATS=['Dormitorio','Living','Cocina','Baño','Lavado','Jardín','Exterior','Estructura'];
-const RW=(x,y,w,h)=>[[x,y,x+w,y],[x+w,y,x+w,y+h],[x+w,y+h,x,y+h],[x,y+h,x,y]].map(a=>({id:uid(),x1:a[0],y1:a[1],x2:a[2],y2:a[3]}));
+const RW=(x,y,w,h)=>[[x,y,x+w,y],[x+w,y,x+w,y+h],[x+w,y+h,x,y+h],[x,y+h,x,y]].map(a=>({id:uid(),x1:a[0],y1:a[1],x2:a[2],y2:a[3],m:wallM()}));
+const MUROS={ladrillo:['Ladrillo','#b4563a',1],bloque:['Bloque de hormigón','#a9a9a4',1],hormigon:['Hormigón armado','#9a9893',1],piedra:['Piedra','#8f8a80',1],madera:['Tabique de madera','#c8a070',0],metalcon:['Metalcon (acero)','#9aa3ab',0],sip:['Panel SIP','#c9b48d',0]};
+let wallMk=null;const wallM=()=>wallMk||(S&&S.muro)||'ladrillo';
+const wMat=w=>(w&&MUROS[w.m])?w.m:(S&&MUROS[S.muro]?S.muro:'ladrillo');
 function fromRooms(rooms,ops,fur){const walls=[],labels=[],out=[],idx={};
  rooms.forEach(([n,x,y,w,h,pr],i)=>{const ws=RW(x,y,w,h);walls.push(...ws);idx[i]=ws;labels.push(Object.assign({x:x+w/2,y:y+h/2,n},pr||{}))});
  ops.forEach(([ri,side,p,wd,t])=>{const ws=idx[ri],[,,,w,h]=rooms[ri],k={N:0,E:1,S:2,W:3}[side],L=k%2?h:w,pos=k<2?p+wd/2:L-p-wd/2;out.push({id:uid(),w:ws[k].id,t,pos,wd})});
@@ -475,7 +480,7 @@ const TPL={
   [['alfombra',1.6,2,90],['sofa',0.515,2,270],['mesac',1.55,2,90],['tv',2.9,2,90],['planta',0.4,0.45,0],['comedor',4.7,2,0],['refri',7.56,0.45,90],['lavaplatos',7.61,2,90],['cocina',7.61,3,90],
    ['cama2',1.75,6.41,180],['closet',3.15,5,90],['velador',0.6,7.21,180],['cama2',6.5,6.41,180],['inodoro',4,5.8,180],['lavamanos',4.725,5.2,90]])
 };
-const DEF={ftile:{},vered:0,zoc:0,paths:[],terR:0,terX:0,terZ:0,roofF:1,roofX:{},roofP:20,roofO:0,roofC:null,ter:'ciudad',pisos:1,H:2.4,muro:'ladrillo',techo:'zinc',roofMode:'dos',merma:10,env:true,snap:0.25,fach:'visto',wv:'corte',padOff:0};
+const DEF={prices:{},ftile:{},vered:0,zoc:0,paths:[],terR:0,terX:0,terZ:0,roofF:1,roofX:{},roofP:20,roofO:0,roofC:null,ter:'ciudad',pisos:1,H:2.4,muro:'ladrillo',techo:'zinc',roofMode:'dos',merma:10,env:true,snap:0.25,fach:'visto',wv:'corte',padOff:0};
 let S,G,VB,tool='cuarto',sel=null,act=null,prev=null,ghost=null,undo=[],photo=null,under=null,DL=null,M=null;
 let cal=null,UT=null;
 let doorK='simple',winK='estandar',cat='Dormitorio',fk='cama2',frot=0,paint='salvia',floorK='madera',tmode='subir',brush=1.5,pathW=1.2,fmode='cuarto',fsize=0.5;
@@ -566,7 +571,7 @@ const Y0=()=>(G?G.pad:0)+(S.ter==='playa'?0.9:0.25)+(S.ter==='playa'?0:+S.zoc||0
 function roomByLabel(f){return S.labels.find(l=>G.inPoly(l.x,l.y,f.pts))}
 function setRoomProp(f,k,v){let l=roomByLabel(f);if(!l){l={x:r2(f.c[0]),y:r2(f.c[1]),n:''};S.labels.push(l)}l[k]=v}
 function calc(){
- const g=G,P=+S.pisos,H=+S.H,f=1+S.merma/100,ter=S.ter,mas=S.muro!=='madera',A=g.area,wl=g.ext+g.int;if(!g.rooms.length)return null;
+ const g=G,P=+S.pisos,H=+S.H,f=1+S.merma/100,ter=S.ter,A=g.area,wl=g.ext+g.int;if(!g.rooms.length)return null;
  if(!A)return null;
  const out={},up=v=>Math.max(0,Math.ceil(v-1e-9)),m1=v=>Math.ceil(v*10-1e-9)/10;
  const add=(k,n,q,u,nt='')=>{if(q>0)(out[k]=out[k]||[]).push([n,q,u,nt])};
@@ -604,24 +609,29 @@ function calc(){
   add(CI,'Polietileno 0,2 mm',up(A*1.15),'m²','Bajo el radier');
  }
  if(ripio)add(CI,'Ripio o gravilla compactada (base)',m1(ripio*f),'m³');
- if(mas){const np=up(wl/3)+4,cad=wl*P,pil=np*H*P;hc+=(cad+pil)*0.04;E+=cad+pil;
-  if(S.muro==='ladrillo'){add(ES,'Ladrillo princesa o fiscal',up(wallA*40*f),'u',`≈ 40 por m²; ${nf(wallA,1)} m² de muro`);mort+=wallA*0.03}
-  else{add(ES,'Bloque de hormigón 14×19×39 cm',up(wallA*12.5*f),'u',`≈ 12,5 por m²; ${nf(wallA,1)} m² de muro`);mort+=wallA*0.012}
-  add(ES,'Pilares de hormigón armado 20×20 cm',np*P,'u','Esquinas, encuentros y cada ~3 m');
-  add(ES,'Cadenas de hormigón armado 20×20 cm',m1(cad),'m','Sobre los muros, en cada piso');
-  add(ES,'Moldaje: tablas 1"×8" × 3,2 m',up(E*0.6/3.2*f),'u','Reutilizables');
-  mort+=wallA*2*0.015;add(ES,'Estuco de 1,5 cm (ambas caras)',up(wallA*2),'m²');
-  if(P>1){hc+=A*0.12;malla+=A;add(ES,'Losa de entrepiso 12 cm',m1(A*0.12),'m³')}
- }else{
-  add(ES,'Pino 2"×4" × 3,2 m (pies derechos y soleras)',up(wl*P*2.8*f),'u','Pies derechos cada 60 cm');
-  add(ES,'OSB 11 mm 1,22×2,44 m (exterior)',up(extA/2.98*f),'u','Arriostramiento');
-  add(ES,'Yeso-cartón 10 mm 1,2×2,4 m (muros)',up(Math.max(0,wallA*2-extA)/2.88*f),'u','RH en baño y cocina');
-  add(ES,'Lana de vidrio 50 mm',up(extA/13.5*f),'rollos ~13,5 m²','Muros exteriores');
-  add(ES,'Barrera de humedad (fieltro)',up(extA/40*f),'rollos 40 m²');
-  add(ES,'Revestimiento fibrocemento 1,2×2,4 m',up(extA/2.88*f),'u','O siding a elección');
-  add(ES,'Clavos y tornillos',up(wallA*0.05*f),'kg');
-  if(P>1){add(ES,'Vigas de entrepiso 2"×8" × 3,2 m',up(A/0.4/3.2*1.1*f),'u','Cada 40 cm');add(ES,'OSB 18 mm (entrepiso)',up(A/2.98*f),'u')}
- }
+ const LB={},EB={};let LT=0,ET=0;for(const s of g.segs){const m=wMat(S.walls.find(w=>w.id===s.wall));LB[m]=(LB[m]||0)+s.len;LT+=s.len;if(s.ext){EB[m]=(EB[m]||0)+s.len;ET+=s.len}}
+ const heavyL=Object.keys(LB).filter(m=>MUROS[m][2]).reduce((t,m)=>t+LB[m],0);
+ const masL=['ladrillo','bloque','piedra'].reduce((t,m)=>t+(LB[m]||0),0);
+ if(masL){const np=up(masL/3)+(masL>=LT*0.9?4:2),cad=masL*P,pil=np*H*P;hc+=(cad+pil)*0.04;E+=cad+pil;
+  add(ES,'Pilares de hormigón armado 20×20 cm',np*P,'u','Esquinas, encuentros y cada ~3 m (muros de albañilería)');
+  add(ES,'Cadenas de hormigón armado 20×20 cm',m1(cad),'m','Sobre los muros de albañilería, en cada piso');
+  add(ES,'Moldaje: tablas 1"×8" × 3,2 m',up((cad+pil)*0.6/3.2*f),'u','Reutilizables')}
+ for(const m of Object.keys(LB)){const L=LB[m],fr=LT?L/LT:0,wA=wallA*fr,eA=ET?extA*(EB[m]||0)/ET:0,nm=MUROS[m][0],tag=Object.keys(LB).length>1?` (${nm})`:'',sq=`${nf(wA,1)} m² de muro`;if(wA<0.05)continue;
+  if(m==='ladrillo'){add(ES,'Ladrillo princesa o fiscal',up(wA*40*f),'u',`≈ 40 por m²; ${sq}`);mort+=wA*0.03+wA*2*0.015;add(ES,'Estuco de 1,5 cm (ambas caras)'+tag,up(wA*2),'m²')}
+  else if(m==='bloque'){add(ES,'Bloque de hormigón 14×19×39 cm',up(wA*12.5*f),'u',`≈ 12,5 por m²; ${sq}`);mort+=wA*0.012+wA*2*0.015;add(ES,'Estuco de 1,5 cm (ambas caras)'+tag,up(wA*2),'m²')}
+  else if(m==='piedra'){add(ES,'Piedra canteada para muro',m1(wA*0.3*1.1*f),'m³',`Muro de 30 cm; ${sq}`);mort+=wA*0.09}
+  else if(m==='hormigon'){const v=wA*0.15;hc+=v;malla+=wA*2;E+=L*P*2;add(ES,'Muro de hormigón armado 15 cm',m1(v*f),'m³',`${sq}; doble malla`);add(ES,'Moldaje fenólico 1,22×2,44 m',up(wA*2/2.98/4*f),'u','Se reutiliza ~4 veces');add(ES,'Desmoldante',up(wA*2/30),'litros')}
+  else{const lt=L*P;
+   if(m==='madera')add(ES,'Pino 2"×4" × 3,2 m (pies derechos y soleras)',up(lt*2.8*f),'u','Pies derechos cada 60 cm');
+   if(m==='metalcon'){add(ES,'Montante Metalcon 90×38×0,85 mm × 6 m',up(lt*(H/0.4/6+0.3)*f),'u','Cada 40 cm');add(ES,'Canal Metalcon 92×30×0,85 mm × 6 m',up(lt*2/6*f),'u','Arriba y abajo');add(ES,'Tornillos autoperforantes',up(wA*30/100*f),'cajas de 100')}
+   if(m==='sip'){add(ES,'Panel SIP 1,22×2,44 m (OSB + EPS 90 mm)',up(wA/2.98*f),'u',sq);add(ES,'Pino 2"×4" × 3,2 m (soleras y uniones)',up(lt*2.4/3.2*f),'u');add(ES,'Espuma de poliuretano',up(lt/6*f),'tarros')}
+   if(m!=='sip')add(ES,'OSB 11 mm 1,22×2,44 m (exterior)'+tag,up(eA/2.98*f),'u','Arriostramiento');
+   add(ES,'Yeso-cartón 10 mm 1,2×2,4 m (muros)'+tag,up(Math.max(0,wA*2-eA)/2.88*f),'u','RH en baño y cocina');
+   if(m!=='sip')add(ES,'Lana de vidrio 50 mm'+tag,up(eA/13.5*f),'rollos ~13,5 m²','Muros exteriores');
+   add(ES,'Barrera de humedad (fieltro)'+tag,up(eA/40*f),'rollos 40 m²');
+   add(ES,'Revestimiento fibrocemento 1,2×2,4 m'+tag,up(eA/2.88*f),'u','O siding a elección');
+   add(ES,'Clavos y tornillos'+tag,up(wA*0.05*f),'kg')}}
+ if(P>1){if(heavyL>=LT/2){hc+=A*0.12;malla+=A;add(ES,'Losa de entrepiso 12 cm',m1(A*0.12),'m³')}else{add(ES,'Vigas de entrepiso 2"×8" × 3,2 m',up(A/0.4/3.2*1.1*f),'u','Cada 40 cm');add(ES,'OSB 18 mm (entrepiso)',up(A/2.98*f),'u')}}
  let rA=0,cab=0;
  if(S.roofMode!=='plano'){const RR=roofRects(g),m=S.roofMode,pt=roofPt();let sp=0,ln=0,raf=0;
   for(const r of RR){let a=Math.min(r.w,r.d),b=Math.max(r.w,r.d);if(m!=='cuatro'&&(S.roofO||0)%2)[a,b]=[b,a];const half=a/2+0.5,pl=m==='cuatro'?2*half*Math.hypot(1,pt):profLen(roofProf(m,half));
@@ -687,14 +697,35 @@ function calc(){
  return out;
 }
 
+/* ---------- precios estimados (CLP, editables) ---------- */
+const PR=[[/^Hormigón H25/,110000],[/^Cemento/,4800],[/^Arena/,25000],[/^Grava/,28000],[/^Bolón/,22000],[/^Ripio/,22000],[/^Fierro estriado/,9500],[/^Fierro liso/,1800],[/^Alambre/,2500],[/^Malla Acma/,32000],[/^Malla acma/,45000],
+ [/^Polietileno/,600],[/^Ladrillo/,380],[/^Bloque de hormigón/,750],[/^Piedra canteada/,60000],[/^Moldaje: tablas/,6500],[/^Moldaje fenólico/,45000],[/^Moldaje de borde/,2500],[/^Desmoldante/,4000],
+ [/^Pino 2"×4"/,3200],[/^OSB 11/,11500],[/^OSB 18/,19000],[/^Yeso-cartón/,6800],[/^Lana de vidrio 50/,24000],[/^Lana de vidrio 100/,26000],[/^Barrera de humedad/,22000],[/^Fieltro/,22000],[/^Revestimiento fibrocemento/,16000],[/^Clavos/,3000],
+ [/^Montante Metalcon/,7500],[/^Canal Metalcon/,6500],[/^Tornillos autoperforantes/,6000],[/^Panel SIP/,85000],[/^Espuma de poliuretano/,6000],
+ [/^Vigas de entrepiso/,9500],[/^Vigas de techo/,7000],[/^Vigas maestras/,9500],[/^Vigas de piso/,7000],[/^Cerchas/,3200],[/^Costaneras/,1700],[/^Plancha de zinc/,15500],[/^Tornillos de techo/,9000],[/^Caballete/,6500],
+ [/^Teja de hormigón/,750],[/^Teja/,900],[/^Listones/,1700],[/^Cumbreras/,2000],[/^Policarbonato/,55000],[/^Perfil de unión/,8000],[/^Tornillos con golilla/,9000],[/^Membrana asfáltica/,45000],[/^Membrana antirraíz/,12000],
+ [/^Sustrato/,40000],[/^Plantas tapizantes/,1500],[/^Limahoya/,6000],[/^Canal central/,6000],[/^Canaleta/,9000],[/^Bajada de agua/,7000],[/^Soportes de canaleta/,800],[/^Chimenea/,450000],[/^Tragaluz/,180000],[/^Membrana selladora/,15000],
+ [/^Cerámica o porcelanato/,9000],[/^Adhesivo cerámico/,6000],[/^Fragüe/,1500],[/^Piso flotante/,9500],[/^Espuma niveladora/,900],[/^Guardapolvo/,1500],[/^Alfombra de muro/,12000],[/^Sellador/,9000],[/^Piso vinílico/,12000],[/^Adhesivo para vinílico/,25000],
+ [/^Pintura/,22000],[/^Puerta exterior/,160000],[/^Puerta/,75000],[/^Sellante/,4500],[/^Excavación/,8000],[/^Relleno compactado/,10000],[/^Material de relleno/,18000],[/^Tierra sobrante/,6000],[/^Viajes de camión/,70000],
+ [/^Retroexcavadora/,35000],[/^Arriendo de placa/,30000],[/^Tubo de drenaje/,3500],[/^Grava para drenaje/,28000],[/^Pilotes/,18000],[/^Pernos/,1500],[/^Poliestireno/,3500],[/^OSB 11 mm 1,22×2,44 m \(piso\)/,19000],[/^OSB 18 mm 1,22×2,44 m \(piso\)/,19000]];
+const PINC=/^(Hormigón total|Mortero|Estuco|Cimiento|Sobrecimiento|Radier|Losa de entrepiso|Losa flotante|Pilares|Cadenas|Muro de hormigón|Muro de contención|Dados|Vereda|Caminos|Base elevada|Escaleras|Junta)/;
+function priceOf(n){const P=S.prices||{};if(P[n]!=null)return +P[n];if(PINC.test(n))return null;const w=n.match(/^Ventana ([\d,]+) × ([\d,]+)/);if(w)return Math.round(parseFloat(w[1].replace(',','.'))*parseFloat(w[2].replace(',','.'))*110000/1000)*1000;
+ for(const[r,v]of PR)if(r.test(n))return v;return 0}
+
 function renderMat(){
  M=calc();
  $('#warn').innerHTML='';
  if(!M){$('#tbCem').textContent='0';$('#sum').innerHTML='';$('#mlist').innerHTML='<p class="muted">Cierra al menos una habitación con muros para calcular los materiales.</p>';return}
  const s=M._sum;$('#tbCem').textContent=s.cem;
- $('#sum').innerHTML=[[nf(s.A,1)+' m²','Superficie construida'],[nf(s.wl,1)+' m','Muros por piso'],[nf(s.rA,1)+' m²','Techo'],[s.cem,'Sacos de cemento']].concat(s.tierra>0.05?[[nf(s.tierra,1)+' m³','Tierra movida (corte + relleno)']]:[]).map(([a,b])=>`<div><b>${a}</b><span>${b}</span></div>`).join('');
- $('#mlist').innerHTML=Object.keys(M).filter(k=>k[0]!=='_').map(k=>`<h3>${k}</h3><table class="stack"><thead><tr><th>Material</th><th style="text-align:right">Cantidad</th><th>Unidad</th><th>Nota</th></tr></thead><tbody>${M[k].map(r=>`<tr><td>${esc(r[0])}</td><td class="q">${nf(r[1],1)}</td><td class="u">${esc(r[2])}</td><td class="n">${esc(r[3])}</td></tr>`).join('')}</tbody></table>`).join('');
+ $('#sum').innerHTML=[[nf(s.A,1)+' m²','Superficie construida'],[nf(s.wl,1)+' m','Muros por piso'],[nf(s.rA,1)+' m²','Techo'],[s.cem,'Sacos de cemento'],['<span id="costS"></span>','Costo estimado']].concat(s.tierra>0.05?[[nf(s.tierra,1)+' m³','Tierra movida (corte + relleno)']]:[]).map(([a,b])=>`<div><b>${a}</b><span>${b}</span></div>`).join('');
+ const clp=v=>'$'+Math.round(v).toLocaleString('es-CL');
+ $('#mlist').innerHTML='<p class="muted">Los precios son un <b>estimado en pesos chilenos</b>. Toca un precio para cambiarlo por el de tu ferretería; el total se recalcula.</p>'+Object.keys(M).filter(k=>k[0]!=='_').map(k=>`<h3>${k}</h3><table class="stack"><thead><tr><th>Material</th><th style="text-align:right">Cantidad</th><th>Unidad</th><th>Precio unit.</th><th style="text-align:right">Subtotal</th><th>Nota</th></tr></thead><tbody>${M[k].map(r=>{const pu=priceOf(r[0]);return`<tr><td>${esc(r[0])}</td><td class="q">${nf(r[1],1)}</td><td class="u">${esc(r[2])}</td><td class="pr">${pu==null?'<span class="muted">en totales</span>':`<input class="pin" inputmode="numeric" data-pn="${esc(r[0])}" data-q="${r[1]}" value="${pu?Math.round(pu).toLocaleString('es-CL'):''}" placeholder="$ precio" aria-label="Precio unitario de ${esc(r[0])}">`}</td><td class="q st">${pu?clp(pu*r[1]):''}</td><td class="n">${esc(r[3])}</td></tr>`}).join('')}</tbody></table>`).join('')+'<div class="ctot"><b>Costo estimado de materiales: <span id="ctot"></span></b> <button class="b" id="bPr0">Precios originales</button></div>';
+ updTot();
 }
+function updTot(){let t=0;$$('#mlist .pin').forEach(i=>{const v=+i.value.replace(/\D/g,'')||0;t+=v*(+i.dataset.q)});const e=$('#ctot');if(e)e.textContent='$'+Math.round(t).toLocaleString('es-CL');const c=$('#costS');if(c)c.textContent='$'+Math.round(t/1000).toLocaleString('es-CL')+' mil'}
+$('#mlist').addEventListener('input',e=>{const i=e.target.closest('.pin');if(!i)return;const v=+i.value.replace(/\D/g,'')||0;S.prices=Object.assign({},S.prices||{});S.prices[i.dataset.pn]=v;save();const st=i.closest('tr').querySelector('.st');if(st)st.textContent=v?'$'+Math.round(v*(+i.dataset.q)).toLocaleString('es-CL'):'';updTot()});
+$('#mlist').addEventListener('change',e=>{const i=e.target.closest('.pin');if(i){const v=+i.value.replace(/\D/g,'')||0;i.value=v?v.toLocaleString('es-CL'):''}});
+$('#mlist').addEventListener('click',e=>{if(e.target.id==='bPr0'){S.prices={};save();renderMat();toast('Precios originales')}});
 const matText=()=>!M?'':Object.keys(M).filter(k=>k[0]!=='_').map(k=>k.toUpperCase()+'\n'+M[k].map(r=>`- ${r[0]}: ${nf(r[1],1)} ${r[2]}`).join('\n')).join('\n\n');
 
 /* ---------- plano ---------- */
@@ -855,7 +886,7 @@ function tUp(){const a=act;act=null;if(!a)return;
  if(a.k==='ftile'){if(a.n)commit(true);else{undo.pop();$('#bUndo').disabled=!undo.length;toast('Toca dentro de una habitación')}return}
  if(a.k==='path'){const p=prev;prev=null;if(p&&Math.hypot(p.x2-p.x1,p.y2-p.y1)>=0.5){snap();S.paths=(S.paths||[]).concat([{id:uid(),x1:p.x1,y1:p.y1,x2:p.x2,y2:p.y2,w:pathW}]);commit(true);toast(`Camino de ${fm(Math.hypot(p.x2-p.x1,p.y2-p.y1))} m. Arrastra otra vez para seguirlo`)}else refresh();return}
  if(a.k==='muro'||a.k==='cuarto'){const p=prev;prev=null;
-  if(p&&a.k==='muro'){if(Math.hypot(p.x2-p.x1,p.y2-p.y1)>=0.2){snap();const w={id:uid(),x1:p.x1,y1:p.y1,x2:p.x2,y2:p.y2};S.walls.push(w);sel={k:'wall',id:w.id};commit(true);return}}
+  if(p&&a.k==='muro'){if(Math.hypot(p.x2-p.x1,p.y2-p.y1)>=0.2){snap();const w={id:uid(),x1:p.x1,y1:p.y1,x2:p.x2,y2:p.y2,m:wallM()};S.walls.push(w);sel={k:'wall',id:w.id};commit(true);return}}
   else if(p){const x=Math.min(p.x1,p.x2),y=Math.min(p.y1,p.y2),w=Math.abs(p.x2-p.x1),h=Math.abs(p.y2-p.y1);
    if(w>=0.5&&h>=0.5){snap();S.walls.push(...RW(x,y,w,h));sel={k:'room',x:x+w/2,y:y+h/2};commit(true);toast(`Habitación de ${fm(w)} × ${fm(h)} m (${nf(w*h,2)} m²)`);return}}
   refresh();return}
@@ -932,6 +963,7 @@ function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';cons
  else if(selO&&selO.t==='puerta')h=doorCards(selO.v||'simple')+opBtns(selO);
  else if(tool==='puerta')h=doorCards(doorK);
  else if(tool==='ventana')h=winCards(winK);
+ else if(tool==='muro'||tool==='cuarto')h='<span class="lbl">Material de los muros nuevos</span>'+Object.entries(MUROS).map(([k,[n,c]])=>sw('wm',k,n,c,wallM()===k,1)).join('');
  else if(tool==='borrar')h='<span class="lbl">Borrar muro:</span>'+[['trozo','Pedazo a pedazo'],['tramo','Hasta la esquina'],['cortar','Marcar un largo'],['muro','Muro entero']].map(([k,n])=>`<button class="${bmode===k?'on':''}" data-bm="${k}">${n}</button>`).join('')+
   (bmode==='trozo'?'<span class="sep"></span><span class="lbl">Tamaño:</span>'+[[0.25,'25 cm'],[0.5,'50 cm'],[1,'1 m']].map(([v,n])=>`<button class="${bsize===v?'on':''}" data-bs="${v}">${n}</button>`).join(''):'')+
   `<span class="lbl">${{trozo:'Cada toque borra un pedazo; arrastra el dedo sobre el muro para ir borrando',tramo:'Toca un muro: se borra hasta el próximo encuentro',cortar:'Toca y arrastra sobre el muro para elegir el largo',muro:'Toca un muro: se borra entero'}[bmode]}</span>`;
@@ -946,7 +978,7 @@ function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';cons
   `<span class="sep"></span><span class="lbl">Corte ${nf(G.cut,1)} m³ · Relleno ${nf(G.fill,1)} m³</span><button data-act="digreset">Terreno original</button>`;
  else if(sel&&sel.k==='furn'){const f=S.furn.find(q=>q.id===sel.id);if(f)h=`<span class="lbl">${FURN[f.k].n}</span><button data-act="rot">↻ Girar</button><button class="danger" data-act="del">Borrar</button>`+colBtns(f,FRAMEC.concat(Object.values(PAINT).map(([n,c])=>[n,c])))}
  
- else if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(w)h=`<span class="lbl">Muro de ${fm(Math.hypot(w.x2-w.x1,w.y2-w.y1))} m</span><button data-act="addp">+ Puerta</button><button data-act="addv">+ Ventana</button><span class="sep"></span><button class="danger" data-act="delp">Borrar pedazo (${bsize<1?bsize*100+' cm':'1 m'})</button><button class="danger" data-act="del">Borrar muro entero</button>`}
+ else if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(w)h=`<span class="lbl">Muro de ${fm(Math.hypot(w.x2-w.x1,w.y2-w.y1))} m</span><button data-act="addp">+ Puerta</button><button data-act="addv">+ Ventana</button><span class="sep"></span><button class="danger" data-act="delp">Borrar pedazo (${bsize<1?bsize*100+' cm':'1 m'})</button><button class="danger" data-act="del">Borrar muro entero</button><span class="sep"></span><span class="lbl">Material</span>`+Object.entries(MUROS).map(([k,[n,c]])=>sw('wmw',k,n,c,wMat(w)===k,1)).join('')}
  else if(sel&&sel.k==='room'){const f=roomAt(sel);if(f)h=`<span class="lbl">${f.name?esc(f.name)+' · ':''}${nf(f.area,2)} m²</span><button data-gotool="pintar">Pintar paredes</button><button data-gotool="piso">Cambiar piso</button><button data-gotool="mueble">Amoblar</button>`}
  el.innerHTML=h}
 $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
@@ -969,6 +1001,8 @@ $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
  if(d.fk){fk=d.fk;sel=null;renderSub();refreshSel();return}
  if(d.paint){paint=d.paint;renderSub();return}
  if(d.floor){floorK=d.floor;renderSub();return}
+ if(d.wm){wallMk=d.wm;renderSub();toast('Los muros nuevos serán de '+MUROS[d.wm][0].toLowerCase());return}
+ if(d.wmw){const w=sel&&sel.k==='wall'&&S.walls.find(q=>q.id===sel.id);if(w){snap();w.m=d.wmw;commit(true);toast('Muro de '+MUROS[d.wmw][0].toLowerCase())}return}
  if(d.fm){fmode=d.fm;if(fmode==='cuarto'&&floorK==='quitar')floorK='madera';renderSub();toast(fmode==='cuadro'?'Arrastra el dedo sobre el piso para pintarlo por cuadros':'Toca una habitación para cambiar todo su piso');return}
  if(d.fs){fsize=+d.fs;renderSub();return}
  if(d.bm){bmode=d.bm;renderSub();return}
@@ -1058,7 +1092,7 @@ $('#rp').addEventListener('input',e=>{const t=e.target,v=parseFloat(t.value);
 /* ---------- ajustes ---------- */
 const bind=(id,k,num)=>{const el=$(id);el.value=S[k];el.addEventListener('change',()=>{let v=num?parseFloat(el.value):el.value;if(num&&isNaN(v))return;
  if(k==='H')v=clamp(v,2.2,3.5);if(k==='merma')v=clamp(v,0,30);if(k==='snap')v=parseFloat(v);S[k]=v;el.value=v;commit(false)})};
-bind('#sP','pisos');bind('#sH','H',1);bind('#sM','muro');bind('#sT','techo');bind('#sR','roofMode');bind('#sW','merma',1);bind('#sSnap','snap');
+bind('#sP','pisos');bind('#sH','H',1);bind('#sM','muro');$('#sM').addEventListener('change',()=>{snap();for(const w of S.walls)delete w.m;wallMk=null;commit(true);toast('Todos los muros: '+(MUROS[S.muro]||['?'])[0].toLowerCase())});bind('#sT','techo');bind('#sR','roofMode');bind('#sW','merma',1);bind('#sSnap','snap');
 function syncInputs(){$('#sP').value=S.pisos;$('#sH').value=S.H;$('#sM').value=S.muro;$('#sT').value=S.techo;$('#sR').value=S.roofMode;$('#sW').value=S.merma;$('#sSnap').value=S.snap}
 $('#bNew').addEventListener('click',()=>{snap();Object.assign(S,TPL.vacio());sel=null;commit(true);fitVB();drawPlan();setTool('cuarto');toast('Terreno vacío. Puedes deshacer si te equivocaste');$('#stage').scrollIntoView({block:'center'})});
 $('#bNew2').addEventListener('click',()=>$('#bNew').click());
@@ -1110,7 +1144,7 @@ $('#dlbar').addEventListener('click',e=>{const b=e.target.closest('[data-dl]');i
    c.toBlob(bl=>bl?dlSave('plano-casa.png',bl):toast('No se pudo crear la imagen'),'image/png')};
   im.onerror=()=>{URL.revokeObjectURL(u);toast('No se pudo crear la imagen; prueba el plano SVG')};im.src=u}
  else if(k==='csv'){if(!M){toast('Cierra al menos una habitación para calcular');return}const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
-  dlSave('materiales-casa.csv','﻿Sección;Material;Cantidad;Unidad;Nota\n'+Object.keys(M).filter(s=>s[0]!=='_').flatMap(s=>M[s].map(r=>[s,r[0],String(r[1]).replace('.',','),r[2],r[3]].map(q).join(';'))).join('\n'))}
+  dlSave('materiales-casa.csv','﻿Sección;Material;Cantidad;Unidad;Precio unitario CLP;Subtotal CLP;Nota\n'+Object.keys(M).filter(s=>s[0]!=='_').flatMap(s=>M[s].map(r=>{const pu=priceOf(r[0]);return[s,r[0],String(r[1]).replace('.',','),r[2],pu==null?'en totales':Math.round(pu),pu?Math.round(pu*r[1]):'',r[3]].map(q).join(';')})).join('\n'))}
  else if(k==='json')dlSave('mi-casa.json',JSON.stringify({app:'constructor-casas',v:3,...S},null,1))});
 $('#fJson').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{const j=JSON.parse(t);if(!Array.isArray(j.walls))throw 0;
  snap();for(const k of Object.keys(DEF))if(j[k]!=null)S[k]=j[k];S.walls=j.walls;S.ops=j.ops||[];S.labels=j.labels||[];S.furn=j.furn||[];S.dig=j.dig||{};fix(S);sel=null;syncInputs();commit(true);fitVB();drawPlan();resetCam();toast('Proyecto abierto')}).catch(()=>toast('Ese archivo no es un proyecto válido'));e.target.value=''});
@@ -1128,7 +1162,7 @@ $('#bWv').addEventListener('click',()=>{const ks=Object.keys(WVN);S.wv=ks[(ks.in
 (()=>{let seen=false;try{seen=!!localStorage.getItem('casas-gest')}catch(e){}if(touchy&&!seen){$('#gest').classList.remove('hide');setTimeout(()=>$('#gest').classList.add('hide'),15000)}
  $('#bGestX').addEventListener('click',()=>{$('#gest').classList.add('hide');try{localStorage.setItem('casas-gest','1')}catch(e){}})})();
 
-const APPV=14;$('#vtag').textContent='v'+APPV;
+const APPV=15;$('#vtag').textContent='v'+APPV;
 (()=>{const el=$('#appv');let t=`Versión ${APPV} del Constructor de casas.`;const A=window.AndroidApp;
  el.innerHTML=t+(A&&A.update?' <button class="b" id="bUpd">Buscar actualización</button>':'')+' <button class="b" id="bTut">Ver tutorial</button>';$('#bTut').addEventListener('click',()=>{$('#sheet').classList.add('hide');tutStart()});if(A&&A.update)$('#bUpd').addEventListener('click',()=>{toast('Buscando actualización…');A.update()})})();
 
@@ -1144,7 +1178,7 @@ const TUT=[
  [null,null,'Bienvenido al Constructor de casas','Te muestro en 2 minutos cómo armar tu casa. Toca <b>Siguiente</b> para avanzar o <b>Saltar</b> si ya sabes. Puedes volver a verlo en <b>Menú → Ver tutorial</b>.'],
  ['#seg',null,'Vista 3D o plano','Cambia entre la casa en <b>3D</b> y el <b>plano</b> visto desde arriba. Todo lo que hagas en uno aparece en el otro.'],
  ['tool','cuarto','1. Dibuja una habitación','Con <b>Habitación</b> arrastra el dedo en diagonal sobre el suelo y se levantan los 4 muros. Si dibujas una al lado de otra, comparten el muro.'],
- ['tool','muro','2. Muros sueltos','Con <b>Muro</b> arrastra de un punto a otro. Mientras dibujas ves el largo, y la cámara te sigue si llegas al borde.'],
+ ['tool','muro','2. Muros sueltos','Con <b>Muro</b> arrastra de un punto a otro. Abajo eliges el material: ladrillo, bloque, hormigón, piedra, madera, Metalcon o panel SIP. Mientras dibujas ves el largo, y la cámara te sigue si llegas al borde.'],
  ['tool','puerta','3. Puertas','Elige abajo el tipo de puerta y toca un muro para ponerla. Después puedes arrastrarla para moverla.'],
  ['tool','ventana','4. Ventanas y ventanales','Igual que las puertas: elige el modelo abajo y toca un muro.'],
  ['tool','elegir','5. Elegir y cambiar','Toca un muro, puerta, ventana o mueble para elegirlo. Abajo aparecen sus opciones: color, tamaño, <b>+ Puerta</b>, <b>+ Ventana</b> o <b>Borrar pedazo</b>.'],
@@ -1155,7 +1189,7 @@ const TUT=[
  ['tool','techo','10. Techo','Elige la forma, el material, la <b>inclinación</b> y el color. Puedes girar el techo, hacer que siga la forma de la casa y agregar chimenea, tragaluces y canaletas.'],
  ['tool','tierra','11. Terreno y exterior','Sube o baja la tierra con el dedo. Abajo agregas <b>vereda</b>, <b>levantas la casa con hormigón</b>, dibujas <b>caminos</b>, giras la casa y eliges el lugar en el cerro.'],
  ['#bWv',null,'Ver por dentro','Este botón cambia los muros: con techo, altos, recortados o bajos, para ver el interior.'],
- ['#bMat',null,'Materiales','Aquí ves la lista de materiales y los sacos de cemento, que se calculan solos con todo lo que dibujas.'],
+ ['#bMat',null,'Materiales','Aquí ves la lista de materiales, cuánto necesitas de cada cosa y un <b>costo estimado</b> con precios que puedes cambiar. Se calcula solo con todo lo que dibujas.'],
  ['#bMenu',null,'Menú','En el Menú eliges el terreno (ciudad, campo, playa, desierto o cerro), altura, pisos y tipo de muro. También puedes <b>subir una foto de tu plano</b> para que la casa se arme sola, y guardar o abrir proyectos.'],
  ['#bUndo',null,'Deshacer','Si te equivocas, toca ↶ para deshacer. Con ⛶ en la vista 3D pasas a pantalla completa.'],
  [null,null,'¡Listo!','Ya sabes lo principal. Empieza con <b>Habitación</b> y arrastra sobre el suelo.']];
@@ -1278,6 +1312,9 @@ $('#bAuto').addEventListener('click',async()=>{if(!under){toast('Primero sube la
 const cv=$('#v3');let FRM=null,R=null,scene,cam,root,envG,FX,GRID,TM,TM2,sun,RAY,GM,GMD,HL,GLM;const TX={},FT={},FMC={},WT={};const O={th:-2.2,ph:0.95,r:22,tx:4,tz:4,ty:1};
 let W3=[],U3=[],envKey='';
 function mkTex(kind){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');let sd=3;const rnd=()=>(sd=sd*16807%2147483647)/2147483647;
+ if(kind==='hormigon'){x.fillStyle='#a6a49e';x.fillRect(0,0,256,256);for(let i=0;i<5000;i++){x.fillStyle=`rgba(${rnd()<0.5?'0,0,0':'255,255,255'},${0.08*rnd()})`;x.fillRect(rnd()*256,rnd()*256,2,2)}x.fillStyle='rgba(0,0,0,.18)';x.fillRect(0,127,256,2);x.fillRect(127,0,2,256);[[64,64],[192,64],[64,192],[192,192]].forEach(([a,b])=>{x.beginPath();x.arc(a,b,3,0,7);x.fill()});return ftex(c)}
+ if(kind==='metalcon'||kind==='sip'){x.fillStyle=kind==='sip'?'#d9cfbd':'#c9ccc9';x.fillRect(0,0,256,256);for(let y=0;y<256;y+=21){x.fillStyle='rgba(0,0,0,.16)';x.fillRect(0,y+18,256,3);x.fillStyle='rgba(255,255,255,.25)';x.fillRect(0,y,256,2)}return ftex(c)}
+ if(kind==='piedra'){x.fillStyle='#6f6a62';x.fillRect(0,0,256,256);for(let r=0,y=0;y<256;r++){const h=24+rnd()*20;let xx=-rnd()*30;while(xx<256){const w=30+rnd()*50;x.fillStyle=`hsl(${28+rnd()*14},${8+rnd()*10}%,${48+rnd()*18}%)`;x.beginPath();x.roundRect?x.roundRect(xx+3,y+3,w-6,h-6,6):x.rect(xx+3,y+3,w-6,h-6);x.fill();xx+=w}y+=h}return ftex(c)}
  if(kind==='madera'){for(let i=0;i<7;i++){const y=i*256/6.67;x.fillStyle=`hsl(32,${38+rnd()*10}%,${60+rnd()*8}%)`;x.fillRect(0,y,256,38);x.fillStyle='rgba(60,35,15,.45)';x.fillRect(0,y+34,256,4)}}
  else{const bl=kind==='bloque',bw=bl?102.4:76.8,bh=bl?51.2:19.7;x.fillStyle=bl?'#b9b9b4':'#d9d1c4';x.fillRect(0,0,256,256);
   for(let row=0,y=0;y<256;row++,y+=bh)for(let xx=(row%2?-bw/2:0);xx<256;xx+=bw){x.fillStyle=bl?`hsl(40,4%,${60+rnd()*10}%)`:`hsl(${12+rnd()*8},${50+rnd()*12}%,${40+rnd()*9}%)`;x.fillRect(xx+2,y+2,bw-4,bh-4)}}
@@ -1308,8 +1345,8 @@ function wbox(w,h,d,x,y,z,mat,par){const g=new THREE.BoxGeometry(w,h,d);g.transl
 const mat=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:0.9},o));
 const MC=new Map(),mc=c=>{if(!MC.has(c))MC.set(c,mat(c));return MC.get(c)};
 const floorMat=k=>FMC[k]||(FMC[k]=mat(0xffffff,{map:FT[k]||(FT[k]=mkFloor(k)),roughness:k==='hormigon'?0.6:0.85,side:THREE.DoubleSide}));
-const wallTex=()=>WT[S.muro]||(WT[S.muro]=mat(0xffffff,{map:TX[S.muro],roughness:0.95}));
-const paintMat=k=>k==='visto'||!PAINT[k]?wallTex():mc(PAINT[k][1]);
+const wallTex=(m=S.muro)=>{m=TX[m]?m:'ladrillo';return WT[m]||(WT[m]=mat(0xffffff,{map:TX[m],roughness:0.95}))};
+const paintMat=(k,m)=>k==='visto'||!PAINT[k]?wallTex(m):mc(PAINT[k][1]);
 function fY(x,y,y0){if(G&&G.rooms.some(f=>G.inPoly(x,y,f.pts)))return y0+0.02;let h=y0;try{h=effH(x,y)}catch(e){}return h+0.01}
 function draw(){if(R)R.render(scene,cam)}
 function camUp(){if(!cam)return;for(let i=0;i<40;i++){const x=O.tx+O.r*Math.sin(O.ph)*Math.cos(O.th),z=O.tz+O.r*Math.sin(O.ph)*Math.sin(O.th);let gy=-1e9;try{gy=effH(x,z)}catch(_){}if(O.ty+O.r*Math.cos(O.ph)>=gy+0.5||O.ph<=0.05)break;O.ph=Math.max(0.04,O.ph-0.03)}
@@ -1438,7 +1475,7 @@ function init3D(){
  GRID=new THREE.Group();const g1=new THREE.GridHelper(40,40,0x2b2d30,0x2b2d30),g2=new THREE.GridHelper(40,80,0x2b2d30,0x2b2d30);
  g1.material.transparent=g2.material.transparent=true;g1.material.opacity=0.22;g2.material.opacity=0.08;g1.material.depthWrite=g2.material.depthWrite=false;GRID.add(g1,g2);scene.add(GRID);GRID.visible=BUILD.includes(tool);
  mkTerrain();
- ['ladrillo','bloque','madera'].forEach(k=>TX[k]=mkTex(k));
+ ['ladrillo','bloque','madera','hormigon','metalcon','sip','piedra'].forEach(k=>TX[k]=mkTex(k));
  const size=()=>{const w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;R.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();posLab();draw()};
  new ResizeObserver(size).observe($('#view'));
  const ndc=e=>{const r=cv.getBoundingClientRect();return new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1)};
@@ -1561,7 +1598,7 @@ function build3D(){if(!R)return;try{
  if(S.ter==='playa')for(const[px,py]of g.piles){const ph=y0-0.2-g.pad;wbox(0.15,ph,0.15,px,g.pad+ph/2,py,wd);wbox(0.4,0.15,0.4,px,g.pad+0.075,py,cm)}
  else for(const s of g.segs){if(!g.rooms.length||!s.ext)continue;const grp=segGroup(s.x1,0,s.y1,Math.atan2(s.y2-s.y1,s.x2-s.x1));wbox(s.len+0.2,y0-pb,0.24,s.len/2,pb+(y0-pb)/2,0,cm,grp)}
  for(const c of g.cw){const L=Math.hypot(c.x2-c.x1,c.z2-c.z1),h=c.h+0.2;wbox(L+0.02,h+0.4,0.2,L/2,g.pad-0.4+(h+0.4)/2,0,mc(0xa8a59d),segGroup(c.x1,0,c.z1,Math.atan2(c.z2-c.z1,c.x2-c.x1)))}
- const side=(s,sg)=>{const r=roomAt({x:(s.x1+s.x2)/2+s.n[0]*0.12*sg,y:(s.y1+s.y2)/2+s.n[1]*0.12*sg});return paintMat(r?(r.wp||'blanco'):(S.fach||'visto'))};
+ const side=(s,sg)=>{const r=roomAt({x:(s.x1+s.x2)/2+s.n[0]*0.12*sg,y:(s.y1+s.y2)/2+s.n[1]*0.12*sg});return paintMat(r?(r.wp||'blanco'):(S.fach||'visto'),wMat(S.walls.find(w=>w.id===s.wall)))};
  const LH=0.35;
  for(let k=0;k<P;k++){const b0=y0+k*(H+0.2);
   for(const s of g.segs){const t=s.ext?0.18:0.1,ex=t/2,ms=[capM,capM,capM,capM,side(s,1),side(s,-1)],ud={t:'seg',i:s.i};
