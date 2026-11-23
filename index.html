@@ -171,6 +171,7 @@ footer{padding:20px 0 40px;color:var(--mut);font-size:14px}
 <div class="sheet hide" id="sheet" role="dialog" aria-label="Menú">
   <div class="sheetH"><div class="chips" id="shTabs"><button data-sh="cfg">Casa y terreno</button><button data-sh="mat">Materiales</button></div><button class="b" id="bShX">Cerrar</button></div>
   <div class="sheetB" id="sheetB" data-sh="cfg">
+    <p class="muted sh-cfg" id="appv" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"></p>
 <p class="tip sh-cfg" id="tip"></p>
 
 <section class="cols sh-cfg">
@@ -734,7 +735,7 @@ function tDown(p,pk,src){if(!p)return;ghost=null;hover.k='';const t=tool;
   snap();const q=placeF(fk,p,frot),f={id:uid(),k:fk,...q};S.furn.push(f);sel={k:'furn',id:f.id};act={k:'mf',id:f.id,dx:0,dy:0,r0:frot,moved:true,src};live();renderPanel();renderSub();return}
  if(t==='elegir'){if(pk.furn)return grabF(pk.furn,p);
   if(pk.op){snap();sel={k:'op',id:pk.op.id};act={k:'mop',id:pk.op.id,moved:false,src};refreshSel();return}
-  if(pk.wall)sel={k:'wall',id:pk.wall.w.id};else if(pk.room)sel={k:'room',x:pk.room.c[0],y:pk.room.c[1]};else sel=null;refreshSel();return}
+  if(pk.wall)sel={k:'wall',id:pk.wall.w.id,t:pk.wall.t};else if(pk.room)sel={k:'room',x:pk.room.c[0],y:pk.room.c[1]};else sel=null;refreshSel();return}
  if(t==='borrar'){if(pk.furn){snap();S.furn=S.furn.filter(q=>q!==pk.furn);sel=null;commit(true);return}
   if(pk.op){snap();S.ops=S.ops.filter(q=>q.id!==pk.op.id);sel=null;commit(true);return}
   if(pk.wall){const w=pk.wall.w,L=pk.wall.L,t=pk.wall.t;
@@ -849,7 +850,7 @@ function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';cons
   `<span class="sep"></span><span class="lbl">Corte ${nf(G.cut,1)} m³ · Relleno ${nf(G.fill,1)} m³</span><button data-act="digreset">Terreno original</button>`;
  else if(sel&&sel.k==='furn'){const f=S.furn.find(q=>q.id===sel.id);if(f)h=`<span class="lbl">${FURN[f.k].n}</span><button data-act="rot">↻ Girar</button><button class="danger" data-act="del">Borrar</button>`}
  
- else if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(w)h=`<span class="lbl">Muro de ${fm(Math.hypot(w.x2-w.x1,w.y2-w.y1))} m</span><button data-act="addp">+ Puerta</button><button data-act="addv">+ Ventana</button><button class="danger" data-act="del">Borrar muro</button>`}
+ else if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(w)h=`<span class="lbl">Muro de ${fm(Math.hypot(w.x2-w.x1,w.y2-w.y1))} m</span><button data-act="addp">+ Puerta</button><button data-act="addv">+ Ventana</button><span class="sep"></span><button class="danger" data-act="delp">Borrar pedazo (${bsize<1?bsize*100+' cm':'1 m'})</button><button class="danger" data-act="del">Borrar muro entero</button>`}
  else if(sel&&sel.k==='room'){const f=roomAt(sel);if(f)h=`<span class="lbl">${f.name?esc(f.name)+' · ':''}${nf(f.area,2)} m²</span><button data-gotool="pintar">Pintar paredes</button><button data-gotool="piso">Cambiar piso</button><button data-gotool="mueble">Amoblar</button>`}
  el.innerHTML=h}
 $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
@@ -875,6 +876,7 @@ $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
  if(a==='calr'){cal.pts=[];renderSub();drawPlan();return}
  if(a==='calok')return applyCal();
  if(a==='rot'){if(!rotSel()){frot=(frot+90)%360;if(ghost&&ghost.k==='f'){ghost.f={...ghost.f,...placeF(ghost.f.k,ghost.f,frot)};refresh()}toast('Girado: '+frot+'°')}return}
+ if(a==='delp'&&sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(!w)return;const L=Math.hypot(w.x2-w.x1,w.y2-w.y1);snap();const d=erasePiece(w,sel.t==null?0.5:sel.t,L);sel=null;commit(true);if(d)toast(`Pedazo de ${fm(d)} m borrado. Para seguir, usa la herramienta Borrar y arrastra el dedo`,4000);return}
  if(a==='del')return delSel();
  if(a==='padup'||a==='paddn'||a==='pad0'){snap();S.padOff=a==='pad0'?0:r2((S.padOff||0)+(a==='padup'?0.1:-0.1));commit(false);O.ty=Y0()+0.6;camUp();return}
  if(a==='digreset'){if(!Object.keys(S.dig).length&&!S.padOff)return;snap();S.dig={};S.padOff=0;commit(false);toast('Terreno original. Puedes deshacer');return}
@@ -1009,6 +1011,10 @@ $('#bWv').addEventListener('click',()=>{const ks=Object.keys(WVN);S.wv=ks[(ks.in
 (()=>{let seen=false;try{seen=!!localStorage.getItem('casas-gest')}catch(e){}if(touchy&&!seen){$('#gest').classList.remove('hide');setTimeout(()=>$('#gest').classList.add('hide'),15000)}
  $('#bGestX').addEventListener('click',()=>{$('#gest').classList.add('hide');try{localStorage.setItem('casas-gest','1')}catch(e){}})})();
 
+const APPV=8;
+(()=>{const el=$('#appv');let t=`Versión ${APPV} del Constructor de casas.`;const A=window.AndroidApp;
+ el.innerHTML=t+(A&&A.update?' <button class="b" id="bUpd">Buscar actualización</button>':'');if(A&&A.update)$('#bUpd').addEventListener('click',()=>{toast('Buscando actualización…');A.update()})})();
+
 /* ---------- casa automática desde la foto del plano ---------- */
 // Reconoce muros (líneas gruesas rectas), puertas (huecos) y ventanas (huecos con líneas finas) en el navegador.
 function imgFromUrl(u){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=u})}
@@ -1137,6 +1143,11 @@ function draw(){if(R)R.render(scene,cam)}
 function camUp(){if(!cam)return;for(let i=0;i<40;i++){const x=O.tx+O.r*Math.sin(O.ph)*Math.cos(O.th),z=O.tz+O.r*Math.sin(O.ph)*Math.sin(O.th);let gy=-1e9;try{gy=effH(x,z)}catch(_){}if(O.ty+O.r*Math.cos(O.ph)>=gy+0.5||O.ph<=0.05)break;O.ph=Math.max(0.04,O.ph-0.03)}
  cam.position.set(O.tx+O.r*Math.sin(O.ph)*Math.cos(O.th),O.ty+O.r*Math.cos(O.ph),O.tz+O.r*Math.sin(O.ph)*Math.sin(O.th));cam.lookAt(O.tx,O.ty,O.tz);updCut();posLab();draw()}
 function resetCam(){const b=G.rb||{x:G.segs.length?G.mnx:2,y:G.segs.length?G.mny:2,w:G.bw||4,d:G.bh||4};O.tx=b.x+b.w/2;O.tz=b.y+b.d/2;O.ty=Y0()+0.6;O.th=-2.2;O.ph=0.95;O.r=Math.max(b.w,b.d,6)*1.5+6;camUp()}
+// al dibujar muros, la cámara avanza sola hacia el borde donde está el dedo
+let edgeEv=null,edgeRAF=null,pick3G=null;
+function edgeLoop(){edgeRAF=null;if(!act||!(act.k==='muro'||act.k==='cuarto')||!edgeEv||act.src!=='3d')return;const r=cv.getBoundingClientRect(),m=Math.min(r.width,r.height)*0.16,x=edgeEv.clientX-r.left,y=edgeEv.clientY-r.top;
+ let vx=0,vy=0;if(x<m)vx=-(m-x)/m;else if(x>r.width-m)vx=(x-(r.width-m))/m;if(y<m)vy=-(m-y)/m;else if(y>r.height-m)vy=(y-(r.height-m))/m;
+ if(vx||vy){panBy(-vx*7,-vy*7);const pk=pick3G(edgeEv);if(pk.p)tMove(pk.p,'3d')}edgeRAF=requestAnimationFrame(edgeLoop)}
 function panBy(dx,dy){const k=O.r*0.0016,fx=-Math.cos(O.th),fz=-Math.sin(O.th),rx=-fz,rz=fx;O.tx+=-rx*dx*k+fx*dy*k;O.tz+=-rz*dx*k+fz*dy*k;camUp()}
 function updCut(){if(!cam||!G)return;const dx=cam.position.x-O.tx,dz=cam.position.z-O.tz,L=Math.hypot(dx,dz)||1,ux=dx/L,uz=dz/L,b=G.rb||{x:O.tx,y:O.tz,w:0,d:0},cx=b.x+b.w/2,cz=b.y+b.d/2;
  for(const w of W3){const low=S.wv==='bajos'||(S.wv==='corte'&&((w.mx-cx)*ux+(w.my-cz)*uz)>0.25);w.full.visible=!low;w.low.visible=low}
@@ -1252,6 +1263,7 @@ function init3D(){
   pk.q=pk.onWall?pk.hp:pk.p;if(!pk.p)pk.p=pk.hp;return pk};
  const wallPt=w=>{const n=new THREE.Vector3(-(w.y2-w.y1),0,w.x2-w.x1).normalize(),pl=new THREE.Plane().setFromNormalAndCoplanarPoint(n,new THREE.Vector3(w.x1,0,w.y1)),v=new THREE.Vector3();return RAY.ray.intersectPlane(pl,v)?{x:v.x,y:v.z}:null};
  const P3=new Map();let g3=null;
+ pick3G=pick3;
  cv.addEventListener('contextmenu',e=>e.preventDefault());
  cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);P3.set(e.pointerId,[e.clientX,e.clientY]);
   if(P3.size===2){if(act){if(act.k==='muro'||act.k==='cuarto'||act.k==='cut'){act=null;prev=null;ghost=null;refresh()}else tUp()}g3={k:'two'};return}
@@ -1271,6 +1283,7 @@ function init3D(){
   if(g3&&g3.k==='orbit'){O.th+=(now[0]-old[0])*0.008;O.ph=clamp(O.ph-(now[1]-old[1])*0.006,0.04,1.56);camUp();return}
   if(g3&&g3.k==='pan'){panBy(now[0]-old[0],now[1]-old[1]);return}
   if(g3||!act)return;
+  if(act.k==='muro'||act.k==='cuarto'){edgeEv=e;if(!edgeRAF)edgeRAF=requestAnimationFrame(edgeLoop)}
   const pk=pick3(e);let p=pk.p;
   if(act.k==='mop'){const o=S.ops.find(q=>q.id===act.id),w=o&&S.walls.find(q=>q.id===o.w);p=(pk.wall&&w&&pk.wall.w.id!==w.id)?pk.hp:((w&&wallPt(w))||pk.p)}
   else if(act.k==='dig')p=pk.tp||pk.p;
