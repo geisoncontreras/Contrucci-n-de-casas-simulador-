@@ -128,6 +128,8 @@ footer{padding:20px 0 40px;color:var(--mut);font-size:14px}
 .sub.two{flex-direction:column;align-items:stretch;gap:4px;overflow:visible}.sub .row{display:flex;gap:6px;overflow-x:auto;align-items:center;scroll-snap-type:x proximity;padding:1px}
 .sub.two .row:first-child button{min-height:36px}
 .tb:disabled{opacity:.4}#bUndo{font-size:20px;min-width:44px;padding:0 8px}
+.stage.fs .topbar,.stage.fs #hint,.stage.fs #gest{display:none!important}.stage.fs{padding-top:0;grid-template-rows:minmax(0,1fr) auto auto}.stage.fs #bFs{background:#c4532d;color:#fff}
+.fso{display:none}.stage.fs .fso{display:inline-block}
 </style>
 <script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
 </head>
@@ -148,7 +150,7 @@ footer{padding:20px 0 40px;color:var(--mut);font-size:14px}
       <div id="lab3"></div>
       <div class="vt">
         <div id="wv" role="group" aria-label="Vista de muros"><button id="bWv">Muros: recortados</button><span class="hide"><button data-wv="techo">Con techo</button><button data-wv="altos">Altos</button><button data-wv="corte">Recortados</button><button data-wv="bajos">Bajos</button></span></div>
-        <div><button id="bRl" class="mo" aria-label="Girar a la izquierda">⟲</button><button id="bRr" class="mo" aria-label="Girar a la derecha">⟳</button><button id="bCz" class="mo" aria-label="Acercar">+</button><button id="bCo" class="mo" aria-label="Alejar">−</button><button id="bCam">Centrar</button></div>
+        <div><button id="bRl" class="mo" aria-label="Girar a la izquierda">⟲</button><button id="bRr" class="mo" aria-label="Girar a la derecha">⟳</button><button id="bCz" class="mo" aria-label="Acercar">+</button><button id="bCo" class="mo" aria-label="Alejar">−</button><button id="bCam">Centrar</button><button id="bUndo2" class="fso" aria-label="Deshacer">↶</button><button id="bFs" aria-label="Pantalla completa" title="Pantalla completa">⛶</button></div>
       </div>
       <div id="gest" class="gest hide">✌️ Dos dedos: girar en todos los ángulos · Pellizcar: acercar · Tres dedos: mover <button id="bGestX" aria-label="Cerrar">✕</button></div>
     </section>
@@ -894,7 +896,7 @@ function delSel(){if(!sel)return;snap();if(sel.k==='op')S.ops=S.ops.filter(o=>o.
  else if(sel.k==='wall'){S.walls=S.walls.filter(w=>w.id!==sel.id);S.ops=S.ops.filter(o=>o.w!==sel.id)}
  else if(sel.k==='furn')S.furn=S.furn.filter(f=>f.id!==sel.id);sel=null;commit(true)}
 function doUndo(){const j=undo.pop();if(!j)return;const o=JSON.parse(j);S.walls=o.walls;S.ops=o.ops;S.labels=o.labels;S.furn=o.furn||[];S.fach=o.fach||'visto';S.dig=o.dig||{};S.padOff=o.padOff||0;sel=null;$('#bUndo').disabled=!undo.length;commit(true)}
-$('#bUndo').addEventListener('click',doUndo);
+$('#bUndo').addEventListener('click',doUndo);$('#bUndo2').addEventListener('click',doUndo);
 function renderPanel(){const el=$('#rp');let h='';
  if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(!w){sel=null;return renderPanel()}
   const L=Math.hypot(w.x2-w.x1,w.y2-w.y1),sg=G.segs.find(s=>s.src.includes(w.id)),n=S.ops.filter(o=>o.w===w.id).length;
@@ -1011,9 +1013,16 @@ $('#bWv').addEventListener('click',()=>{const ks=Object.keys(WVN);S.wv=ks[(ks.in
 (()=>{let seen=false;try{seen=!!localStorage.getItem('casas-gest')}catch(e){}if(touchy&&!seen){$('#gest').classList.remove('hide');setTimeout(()=>$('#gest').classList.add('hide'),15000)}
  $('#bGestX').addEventListener('click',()=>{$('#gest').classList.add('hide');try{localStorage.setItem('casas-gest','1')}catch(e){}})})();
 
-const APPV=8;
+const APPV=9;
 (()=>{const el=$('#appv');let t=`Versión ${APPV} del Constructor de casas.`;const A=window.AndroidApp;
  el.innerHTML=t+(A&&A.update?' <button class="b" id="bUpd">Buscar actualización</button>':'');if(A&&A.update)$('#bUpd').addEventListener('click',()=>{toast('Buscando actualización…');A.update()})})();
+
+/* pantalla completa: oculta la barra de arriba y las instrucciones; en el navegador también pide pantalla completa */
+function setFs(on){$('#stage').classList.toggle('fs',on);$('#bFs').textContent=on?'✕':'⛶';$('#bFs').setAttribute('aria-label',on?'Salir de pantalla completa':'Pantalla completa');
+ try{if(!window.AndroidApp){if(on&&!document.fullscreenElement&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{})}}catch(e){}
+ try{localStorage.setItem('casas-fs',on?'1':'')}catch(e){}if(on)toast('Pantalla completa. Toca ✕ arriba a la derecha para volver')}
+$('#bFs').addEventListener('click',()=>setFs(!$('#stage').classList.contains('fs')));
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&$('#stage').classList.contains('fs')&&!window.AndroidApp)setFs(false)});
 
 /* ---------- casa automática desde la foto del plano ---------- */
 // Reconoce muros (líneas gruesas rectas), puertas (huecos) y ventanas (huecos con líneas finas) en el navegador.
