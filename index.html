@@ -31,6 +31,12 @@ header p{margin:0;color:var(--mut);max-width:70ch}
 @media(max-width:900px){.seg{display:flex}.panes{grid-template-columns:minmax(0,1fr)}.stage{height:clamp(560px,84vh,860px)}.stage[data-v=plan] #view{display:none}.stage[data-v=d3] #pplan{display:none}}
 #plan{position:absolute;inset:0;width:100%;height:100%;background:var(--paper);touch-action:none;display:block;user-select:none;-webkit-user-select:none}
 #view{background:#cfe0ea center/cover no-repeat}
+#tut{position:fixed;inset:0;z-index:60}#tut.hide{display:none}#tut.dim{background:rgba(0,0,0,.55)}
+.tut-hl{position:fixed;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.55);outline:3px solid #f0a37f;pointer-events:none;transition:all .25s}
+.tut-card{position:fixed;left:12px;right:12px;max-width:460px;margin:0 auto;background:var(--bg,#fff);color:var(--ink,#1c1d1f);border-radius:16px;padding:14px 16px;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.tut-card h3{margin:2px 0 6px;font-size:19px}.tut-card .tut-t{margin:0 0 12px;line-height:1.45}.tut-n{margin:0;font-size:13px;opacity:.65}
+.tut-b{display:flex;gap:8px;align-items:center}.tut-b span{flex:1}.tut-b .pri{background:#c4532d;color:#fff;border-color:#c4532d}
+@media(prefers-reduced-motion:reduce){.tut-hl{transition:none}}
 #vtag{position:absolute;left:8px;bottom:6px;font:600 11px Barlow,sans-serif;color:rgba(20,22,24,.55);background:rgba(255,255,255,.55);border-radius:6px;padding:1px 6px;pointer-events:none;z-index:3}
 #v3{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
 #v3msg{position:absolute;inset:0;display:grid;place-items:center;color:#333;padding:20px;text-align:center;pointer-events:none}
@@ -1100,9 +1106,9 @@ $('#bWv').addEventListener('click',()=>{const ks=Object.keys(WVN);S.wv=ks[(ks.in
 (()=>{let seen=false;try{seen=!!localStorage.getItem('casas-gest')}catch(e){}if(touchy&&!seen){$('#gest').classList.remove('hide');setTimeout(()=>$('#gest').classList.add('hide'),15000)}
  $('#bGestX').addEventListener('click',()=>{$('#gest').classList.add('hide');try{localStorage.setItem('casas-gest','1')}catch(e){}})})();
 
-const APPV=12;$('#vtag').textContent='v'+APPV;
+const APPV=13;$('#vtag').textContent='v'+APPV;
 (()=>{const el=$('#appv');let t=`Versión ${APPV} del Constructor de casas.`;const A=window.AndroidApp;
- el.innerHTML=t+(A&&A.update?' <button class="b" id="bUpd">Buscar actualización</button>':'');if(A&&A.update)$('#bUpd').addEventListener('click',()=>{toast('Buscando actualización…');A.update()})})();
+ el.innerHTML=t+(A&&A.update?' <button class="b" id="bUpd">Buscar actualización</button>':'')+' <button class="b" id="bTut">Ver tutorial</button>';$('#bTut').addEventListener('click',()=>{$('#sheet').classList.add('hide');tutStart()});if(A&&A.update)$('#bUpd').addEventListener('click',()=>{toast('Buscando actualización…');A.update()})})();
 
 /* pantalla completa: oculta la barra de arriba y las instrucciones; en el navegador también pide pantalla completa */
 function setFs(on){$('#stage').classList.toggle('fs',on);$('#bFs').textContent=on?'✕':'⛶';$('#bFs').setAttribute('aria-label',on?'Salir de pantalla completa':'Pantalla completa');
@@ -1110,6 +1116,44 @@ function setFs(on){$('#stage').classList.toggle('fs',on);$('#bFs').textContent=o
  try{localStorage.setItem('casas-fs',on?'1':'')}catch(e){}if(on)toast('Pantalla completa. Toca ✕ arriba a la derecha para volver')}
 $('#bFs').addEventListener('click',()=>setFs(!$('#stage').classList.contains('fs')));
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&$('#stage').classList.contains('fs')&&!window.AndroidApp)setFs(false)});
+
+/* ---------- tutorial paso a paso ---------- */
+const TUT=[
+ [null,null,'Bienvenido al Constructor de casas','Te muestro en 2 minutos cómo armar tu casa. Toca <b>Siguiente</b> para avanzar o <b>Saltar</b> si ya sabes. Puedes volver a verlo en <b>Menú → Ver tutorial</b>.'],
+ ['#seg',null,'Vista 3D o plano','Cambia entre la casa en <b>3D</b> y el <b>plano</b> visto desde arriba. Todo lo que hagas en uno aparece en el otro.'],
+ ['tool','cuarto','1. Dibuja una habitación','Con <b>Habitación</b> arrastra el dedo en diagonal sobre el suelo y se levantan los 4 muros. Si dibujas una al lado de otra, comparten el muro.'],
+ ['tool','muro','2. Muros sueltos','Con <b>Muro</b> arrastra de un punto a otro. Mientras dibujas ves el largo, y la cámara te sigue si llegas al borde.'],
+ ['tool','puerta','3. Puertas','Elige abajo el tipo de puerta y toca un muro para ponerla. Después puedes arrastrarla para moverla.'],
+ ['tool','ventana','4. Ventanas y ventanales','Igual que las puertas: elige el modelo abajo y toca un muro.'],
+ ['tool','elegir','5. Elegir y cambiar','Toca un muro, puerta, ventana o mueble para elegirlo. Abajo aparecen sus opciones: color, tamaño, <b>+ Puerta</b>, <b>+ Ventana</b> o <b>Borrar pedazo</b>.'],
+ ['tool','borrar','6. Borrar por partes','En <b>Pedazo a pedazo</b> cada toque borra un trozo de muro (25 cm, 50 cm o 1 m). También puedes arrastrar el dedo sobre el muro para ir borrando.'],
+ ['#view','mano','7. Mover la cámara','<b>Dos dedos</b>: girar en todos los ángulos. <b>Pellizcar</b>: acercar o alejar. <b>Tres dedos</b> o la herramienta <b>Mover</b>: correr la vista con la mano.'],
+ ['tool','mueble','8. Muebles','Elige la categoría y el mueble, y tócalo sobre el piso. Arrástralo para moverlo y usa <b>↻ Girar</b>.'],
+ ['tool','pintar','9. Pintar','Elige un color y toca una habitación, la fachada, un mueble, una puerta o una ventana. Con <b>Piso</b> cambias el piso de cada habitación.'],
+ ['tool','techo','10. Techo','Elige la forma, el material, la <b>inclinación</b> y el color. Puedes girar el techo, hacer que siga la forma de la casa y agregar chimenea, tragaluces y canaletas.'],
+ ['tool','tierra','11. Terreno y exterior','Sube o baja la tierra con el dedo. Abajo agregas <b>vereda</b>, <b>levantas la casa con hormigón</b>, dibujas <b>caminos</b>, giras la casa y eliges el lugar en el cerro.'],
+ ['#bWv',null,'Ver por dentro','Este botón cambia los muros: con techo, altos, recortados o bajos, para ver el interior.'],
+ ['#bMat',null,'Materiales','Aquí ves la lista de materiales y los sacos de cemento, que se calculan solos con todo lo que dibujas.'],
+ ['#bMenu',null,'Menú','En el Menú eliges el terreno (ciudad, campo, playa, desierto o cerro), altura, pisos y tipo de muro. También puedes <b>subir una foto de tu plano</b> para que la casa se arme sola, y guardar o abrir proyectos.'],
+ ['#bUndo',null,'Deshacer','Si te equivocas, toca ↶ para deshacer. Con ⛶ en la vista 3D pasas a pantalla completa.'],
+ [null,null,'¡Listo!','Ya sabes lo principal. Empieza con <b>Habitación</b> y arrastra sobre el suelo.']];
+let tutI=-1;
+function tutStart(){tutI=0;let el=$('#tut');if(!el){el=document.createElement('div');el.id='tut';el.innerHTML='<div class="tut-hl"></div><div class="tut-card" role="dialog" aria-live="polite"><p class="tut-n"></p><h3></h3><p class="tut-t"></p><div class="tut-b"><button class="b" data-t="skip">Saltar</button><span></span><button class="b" data-t="back">Atrás</button><button class="b pri" data-t="next">Siguiente</button></div></div>';document.body.appendChild(el);
+  el.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const t=b.dataset.t;if(t==='skip')tutEnd();else if(t==='back'){if(tutI>0){tutI--;tutShow()}}else{if(tutI>=TUT.length-1)tutEnd();else{tutI++;tutShow()}}});
+  addEventListener('resize',()=>{if(tutI>=0)tutShow()})}
+ el.classList.remove('hide');$('#sheet').classList.add('hide');$('#gest').classList.add('hide');tutShow()}
+function tutEnd(){tutI=-1;const el=$('#tut');if(el)el.classList.add('hide');try{localStorage.setItem('casas-tut','1')}catch(e){}setTool('cuarto')}
+function tutShow(){const [tg,tl,ti,tx]=TUT[tutI],el=$('#tut'),hl=el.querySelector('.tut-hl'),cd=el.querySelector('.tut-card');
+ if(tl)setTool(tl);
+ el.querySelector('.tut-n').textContent=`Paso ${tutI+1} de ${TUT.length}`;el.querySelector('h3').textContent=ti;el.querySelector('.tut-t').innerHTML=tx;
+ el.querySelector('[data-t="back"]').style.visibility=tutI?'visible':'hidden';el.querySelector('[data-t="next"]').textContent=tutI>=TUT.length-1?'Empezar':'Siguiente';el.querySelector('[data-t="skip"]').style.visibility=tutI>=TUT.length-1?'hidden':'visible';
+ requestAnimationFrame(()=>{let r=null;const U=(a,b)=>!a?b:!b?a:{left:Math.min(a.left,b.left),top:Math.min(a.top,b.top),right:Math.max(a.right,b.right),bottom:Math.max(a.bottom,b.bottom)};
+  const R=s=>{const e=typeof s==='string'?$(s):s;if(!e||!e.offsetParent)return null;const q=e.getBoundingClientRect();return q.width?{left:q.left,top:q.top,right:q.right,bottom:q.bottom}:null};
+  if(tg==='tool'){r=U(R(document.querySelector(`.tool[data-tool="${tl}"]`)),$('#sub').innerHTML.trim()?R('#sub'):null)}else if(tg)r=R(tg);
+  if(r){const p=6;Object.assign(hl.style,{display:'block',left:r.left-p+'px',top:r.top-p+'px',width:r.right-r.left+2*p+'px',height:r.bottom-r.top+2*p+'px'});el.classList.remove('dim')}else{hl.style.display='none';el.classList.add('dim')}
+  const H=innerHeight,mid=r?(r.top+r.bottom)/2:H/2;cd.style.top=cd.style.bottom='';
+  if(!r)cd.style.top=Math.max(16,(H-cd.offsetHeight)/2)+'px';else if(mid>H*0.5)cd.style.top=Math.max(12,Math.min(r.top-cd.offsetHeight-16,H*0.12))+'px';else cd.style.top=Math.min(H-cd.offsetHeight-12,r.bottom+16)+'px'})}
+(()=>{let seen=false;try{seen=!!localStorage.getItem('casas-tut')}catch(e){}if(!seen)setTimeout(()=>{if(tutI<0&&$('#sheet').classList.contains('hide'))tutStart()},900)})();
 
 /* ---------- casa automática desde la foto del plano ---------- */
 // Reconoce muros (líneas gruesas rectas), puertas (huecos) y ventanas (huecos con líneas finas) en el navegador.
