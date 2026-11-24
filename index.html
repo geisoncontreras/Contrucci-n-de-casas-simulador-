@@ -800,6 +800,7 @@ function planSVG(ex){
  const fu=[...S.furn].sort((a,b)=>(b.k==='alfombra')-(a.k==='alfombra'));
  for(const f of fu)s+=fSVG(f,C,!ex&&sel&&sel.k==='furn'&&sel.id===f.id,false,fs);
  for(const g of G.segs)s+=`<line x1="${g.x1}" y1="${g.y1}" x2="${g.x2}" y2="${g.y2}" stroke="${C.ink}" stroke-width="${g.ext?0.2:0.12}" stroke-linecap="square"/>`;
+ if(!ex&&sel&&sel.k==='walls')for(const w of S.walls)if(sel.ids.includes(w.id))s+=`<line x1="${w.x1}" y1="${w.y1}" x2="${w.x2}" y2="${w.y2}" stroke="${C.acc}" stroke-width="0.14" stroke-linecap="round"/>`;
  if(!ex&&sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(w)s+=`<line x1="${w.x1}" y1="${w.y1}" x2="${w.x2}" y2="${w.y2}" stroke="${C.acc}" stroke-width="0.14" stroke-linecap="round"/><circle cx="${w.x1}" cy="${w.y1}" r="${fs*0.4}" fill="${C.acc}"/><circle cx="${w.x2}" cy="${w.y2}" r="${fs*0.4}" fill="${C.acc}"/>`}
  for(const o of G.ops){const g=o.s,u=g.u,A=[g.x1+u[0]*o.a,g.y1+u[1]*o.a],B=[g.x1+u[0]*o.b,g.y1+u[1]*o.b],n=g.n,on=!ex&&sel&&sel.k==='op'&&sel.id===o.id;
   s+=`<line x1="${A[0]}" y1="${A[1]}" x2="${B[0]}" y2="${B[1]}" stroke="${C.bg}" stroke-width="${g.ext?0.24:0.16}"/>`;
@@ -870,6 +871,7 @@ function tDown(p,pk,src){if(!p)return;ghost=null;hover.k='';const t=tool;
  if(t==='puerta'||t==='ventana'){const n=pk.wall||nearWall(p,wtol(src))||nearWall(p,1.6);if(!n){toast('Toca cerca de un muro');return}const o=addOp(n,t,t==='ventana'?winK:doorK);if(!o)return;act={k:'mop',id:o.id,moved:true,src};commit(true);return}
  if(t==='mueble'){if(pk.furn&&(pk.furn.k!=='alfombra'||fk==='alfombra'))return grabF(pk.furn,p);
   snap();const q=placeF(fk,p,frot),f={id:uid(),k:fk,...q};S.furn.push(f);sel={k:'furn',id:f.id};act={k:'mf',id:f.id,dx:0,dy:0,r0:frot,moved:true,src};live();renderPanel();renderSub();return}
+ if(t==='elegir'&&multiW){if(pk.wall){const id=pk.wall.w.id,ids=sel&&sel.k==='walls'?sel.ids.slice():[];const i=ids.indexOf(id);if(i>=0)ids.splice(i,1);else ids.push(id);sel=ids.length?{k:'walls',ids}:null;sfx('tap');refreshSel()}else toast('Toca los muros que quieras agregar');return}
  if(t==='elegir'){if(pk.furn)return grabF(pk.furn,p);
   if(pk.op){snap();sel={k:'op',id:pk.op.id};act={k:'mop',id:pk.op.id,moved:false,src};refreshSel();return}
   if(pk.roof&&!pk.wall&&!pk.room)sel={k:'roof'};else if(pk.wall)sel={k:'wall',id:pk.wall.w.id,t:pk.wall.t};else if(pk.room)sel={k:'room',x:pk.room.c[0],y:pk.room.c[1]};else{const q=pk.path||(pk.p&&pathAt(pk.p));if(q)sel={k:'path',id:q.id};else if(pk.vered||(pk.p&&veredAt(pk.p)))sel={k:'vered'};else sel=null}refreshSel();return}
@@ -928,6 +930,8 @@ hover.k='';
 
 /* interacción del plano */
 const PT=new Map();
+let multiW=false;
+const selWBtns=()=>`<span class="lbl">Elegir muros</span><button data-act="wall">Todos</button><button data-act="wext">Exteriores</button><button data-act="wint">Interiores</button><button class="${multiW?'on':''}" data-act="wmulti">${multiW?'✓ ':''}Varios</button>`;
 function pathAt(p){for(const q of [...(S.paths||[])].reverse()){const dx=q.x2-q.x1,dy=q.y2-q.y1,L2=dx*dx+dy*dy;if(!L2)continue;const t=clamp(((p.x-q.x1)*dx+(p.y-q.y1)*dy)/L2,0,1);if(Math.hypot(q.x1+dx*t-p.x,q.y1+dy*t-p.y)<=q.w/2+0.15)return q}return null}
 function veredAt(p){const v=+S.vered||0;if(!v||!G.rooms.length||roomAt(p))return false;return footRects(G).some(r=>p.x>=r.x-v&&p.x<=r.x+r.w+v&&p.y>=r.y-v&&p.y<=r.y+r.d+v)}
 function pkPlan(p){const r=roomAt(p),w=nearWall(p);return{p,furn:furnAt(p),op:nearOp(p),wall:w,room:r,facade:!r&&!!w,path:!r&&!w?pathAt(p):null,vered:!r&&!w&&veredAt(p)}}
@@ -961,7 +965,7 @@ new ResizeObserver(()=>{const W=plan.clientWidth,Hh=plan.clientHeight;if(!W||!Hh
 $('#tools').innerHTML=TOOLS.map(([k,l,tip])=>`<button class="tool" data-tool="${k}" data-g="${(TSUB[k]||['x'])[0]}" title="${esc(tip)}"><span class="ti"><svg viewBox="0 0 24 24">${ICO[k]}</svg></span>${l}<span class="ts">${(TSUB[k]||['',''])[1]}</span></button>`).join('')+'<span class="gap"></span><label class="tool" id="bUp" title="Subir foto del plano"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg><span id="bUpT">Subir plano</span><input type="file" id="fPlan2" accept="image/*" hidden></label>';
 const touchy=matchMedia('(pointer:coarse)').matches;
 const BUILD=['cuarto','muro','puerta','ventana','mueble'];
-function setTool(k){tool=k;if(sel&&!['elegir','puerta','ventana','borrar'].includes(k)&&!(k==='mueble'&&sel.k==='furn'))sel=null;if(k==='techo'&&S.wv!=='techo'){S.wv='techo';save();ui()}act=null;prev=null;ghost=null;hover.k='';$$('.tool[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===k));const T=TOOLS.find(t=>t[0]===k);
+function setTool(k){tool=k;if(k!=='elegir')multiW=false;if(sel&&!['elegir','puerta','ventana','borrar'].includes(k)&&!(k==='mueble'&&sel.k==='furn'))sel=null;if(k==='techo'&&S.wv!=='techo'){S.wv='techo';save();ui()}act=null;prev=null;ghost=null;hover.k='';$$('.tool[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===k));const T=TOOLS.find(t=>t[0]===k);
  $('#hint').innerHTML=`<b>${T[1]}:</b> ${T[2]}`+(touchy?'':' <span style="opacity:.75">· Clic derecho gira la cámara, rueda acerca.</span>');
  plan.style.cursor=k==='mano'?'grab':k==='elegir'||k==='borrar'?'pointer':'crosshair';cv.style.cursor=k==='mano'?'grab':k==='elegir'||k==='borrar'?'pointer':'crosshair';
  if(k!=='elegir'&&k!=='mueble'&&sel){sel=null;renderPanel()}
@@ -1004,11 +1008,13 @@ function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';cons
   `<span class="sep"></span><span class="lbl">Corte ${nf(G.cut,1)} m³ · Relleno ${nf(G.fill,1)} m³</span><button data-act="digreset">Terreno original</button>`;
  else if(sel&&sel.k==='furn'){const f=S.furn.find(q=>q.id===sel.id);if(f)h=`<span class="lbl">${FURN[f.k].n}</span><button data-act="rot">↻ Girar</button><button class="danger" data-act="del">Borrar</button>`+colBtns(f,FURNM.concat(Object.values(PAINT).map(([n,c])=>[n,c])))}
  
- else if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(w)h=`<span class="lbl">Muro de ${fm(Math.hypot(w.x2-w.x1,w.y2-w.y1))} m</span><button data-act="addp">+ Puerta</button><button data-act="addv">+ Ventana</button><span class="sep"></span><button class="danger" data-act="delp">Borrar pedazo (${bsize<1?bsize*100+' cm':'1 m'})</button><button class="danger" data-act="del">Borrar muro entero</button><span class="sep"></span><span class="lbl">Material</span>`+Object.entries(MUROS).map(([k,[n,c]])=>sw('wmw',k,n,c,wMat(w)===k,1)).join('')}
+ else if(sel&&sel.k==='walls'){const ws=S.walls.filter(w=>sel.ids.includes(w.id)),L=ws.reduce((t,w)=>t+Math.hypot(w.x2-w.x1,w.y2-w.y1),0),ms=new Set(ws.map(wMat));h=`<span class="lbl">${ws.length} muros · ${fm(L)} m</span>`+selWBtns()+'<span class="sep"></span><span class="lbl">Material</span>'+Object.entries(MUROS).map(([k,[n,c]])=>sw('wmall',k,n,c,ms.size===1&&ms.has(k),1)).join('')+'<span class="sep"></span><button data-act="wnone">Quitar selección</button>'}
+ else if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(w)h=selWBtns()+`<span class="sep"></span><span class="lbl">Muro de ${fm(Math.hypot(w.x2-w.x1,w.y2-w.y1))} m</span><button data-act="addp">+ Puerta</button><button data-act="addv">+ Ventana</button><span class="sep"></span><button class="danger" data-act="delp">Borrar pedazo (${bsize<1?bsize*100+' cm':'1 m'})</button><button class="danger" data-act="del">Borrar muro entero</button><span class="sep"></span><span class="lbl">Material</span>`+Object.entries(MUROS).map(([k,[n,c]])=>sw('wmw',k,n,c,wMat(w)===k,1)).join('')}
  else if(sel&&sel.k==='room'){const f=roomAt(sel);if(f)h=`<span class="lbl">${f.name?esc(f.name)+' · ':''}${nf(f.area,2)} m²</span><button data-gotool="pintar">Pintar paredes</button><button data-gotool="mueble">Amoblar</button><span class="sep"></span><span class="lbl">Piso</span>`+Object.entries(FLOOR).map(([k,[n,,bg]])=>sw('rfp',k,n,bg,(f.fp||'ceramica')===k,1)).join('')}
  else if(sel&&sel.k==='path'){const q=(S.paths||[]).find(x=>x.id===sel.id);if(q)h=`<span class="lbl">Camino de ${fm(Math.hypot(q.x2-q.x1,q.y2-q.y1))} m</span>`+Object.entries(PATHM).map(([k,[n,c]])=>sw('pm',k,n,hex(c),(q.m||'hormigon')===k,1)).join('')+'<span class="sep"></span>'+[[0.8,'Angosto'],[1.2,'Normal'],[3,'Para auto']].map(([v,n])=>`<button class="${q.w===v?'on':''}" data-pwq="${v}">${n}</button>`).join('')+'<button class="danger" data-act="del">Borrar</button>'}
  else if(sel&&sel.k==='vered')h='<span class="lbl">Vereda</span>'+Object.entries(PATHM).map(([k,[n,c]])=>sw('vm',k,n,hex(c),(S.veredM||'hormigon')===k,1)).join('')+'<span class="sep"></span>'+[[0,'Quitar'],[0.6,'60 cm'],[1,'1 m'],[1.5,'1,5 m']].map(([v,n])=>`<button class="${(+S.vered||0)===v?'on':''}" data-ver="${v}">${n}</button>`).join('');
  else if(sel&&sel.k==='roof')h='<span class="lbl">Techo</span>'+Object.entries(ROOFM).map(([k,[n,c]])=>`<button class="${S.techo===k?'on':''}" data-rmat="${k}"><i style="background:${hex(c)}"></i>${n}</button>`).join('')+'<span class="sep"></span><button data-gotool="techo">Forma, inclinación y color</button>';
+ if(!h&&tool==='elegir')h=selWBtns()+'<span class="lbl">o toca algo para cambiarlo</span>';
  el.innerHTML=h}
 $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
  if(d.cat){cat=d.cat;fk=Object.keys(FURN).find(k=>FURN[k].c===cat);renderSub();return}
@@ -1036,6 +1042,7 @@ $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
  if(d.pwq){const q=sel&&sel.k==='path'&&(S.paths||[]).find(x=>x.id===sel.id);if(q){snap();q.w=+d.pwq;commit(true)}return}
  if(d.vm){snap();S.veredM=d.vm;commit(true);toast('Vereda de '+b.textContent.toLowerCase());return}
  if(d.wm){wallMk=d.wm;renderSub();toast('Los muros nuevos serán de '+MUROS[d.wm][0].toLowerCase());return}
+ if(d.wmall){if(sel&&sel.k==='walls'){snap();for(const w of S.walls)if(sel.ids.includes(w.id))w.m=d.wmall;commit(true);sfx('build');toast(`${sel.ids.length} muros de ${MUROS[d.wmall][0].toLowerCase()}`)}return}
  if(d.wmw){const w=sel&&sel.k==='wall'&&S.walls.find(q=>q.id===sel.id);if(w){snap();w.m=d.wmw;commit(true);toast('Muro de '+MUROS[d.wmw][0].toLowerCase())}return}
  if(d.fm){fmode=d.fm;if(fmode==='cuarto'&&floorK==='quitar')floorK='madera';renderSub();toast(fmode==='cuadro'?'Arrastra el dedo sobre el piso para pintarlo por cuadros':'Toca una habitación para cambiar todo su piso');return}
  if(d.fs){fsize=+d.fs;renderSub();return}
@@ -1052,6 +1059,9 @@ $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
  if(a==='delp'&&sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(!w)return;const L=Math.hypot(w.x2-w.x1,w.y2-w.y1);snap();const d=erasePiece(w,sel.t==null?0.5:sel.t,L);sel=null;commit(true);if(d)toast(`Pedazo de ${fm(d)} m borrado. Para seguir, usa la herramienta Borrar y arrastra el dedo`,4000);return}
  if(a==='del')return delSel();
  if(a==='pathdel'){snap();S.paths=(S.paths||[]).slice(0,-1);commit(true);toast('Camino quitado');return}
+ if(a==='wall'||a==='wext'||a==='wint'){const ext=new Set(G.segs.filter(s=>s.ext).map(s=>s.wall)),ids=S.walls.filter(w=>a==='wall'||(a==='wext')===ext.has(w.id)).map(w=>w.id);multiW=false;sel=ids.length?{k:'walls',ids}:null;refreshSel();toast(ids.length?`${ids.length} muros elegidos: ahora elige el material abajo`:'No hay muros');return}
+ if(a==='wmulti'){multiW=!multiW;if(multiW&&sel&&sel.k==='wall')sel={k:'walls',ids:[sel.id]};renderSub();toast(multiW?'Toca varios muros para elegirlos (otro toque los quita)':'Listo');return}
+ if(a==='wnone'){sel=null;multiW=false;refreshSel();return}
  if(a==='rforma'){snap();S.roofF=S.roofF?0:1;if(S.wv!=='techo')S.wv='techo';commit(false);toast(S.roofF?'El techo sigue la forma de la casa':'Un solo techo sobre toda la casa');return}
  if(a==='hrot'){rotHouse();return}
  if(/^(tr[+-]|tz[ud]|tx[lr]|t0)$/.test(a)){snap();if(a==='t0'){S.terR=0;S.terX=0;S.terZ=0;S.dig={}}else if(a[1]==='r')S.terR=((+S.terR||0)+(a[2]==='+'?15:-15)+360)%360;else{const st=3,up_=S.ter==='cerro';if(a==='tzu')S.terZ=(+S.terZ||0)+st;if(a==='tzd')S.terZ=(+S.terZ||0)-st;if(a==='txl')S.terX=(+S.terX||0)-st;if(a==='txr')S.terX=(+S.terX||0)+st}
@@ -1197,7 +1207,7 @@ $('#bWv').addEventListener('click',()=>{const ks=Object.keys(WVN);S.wv=ks[(ks.in
 (()=>{let seen=false;try{seen=!!localStorage.getItem('casas-gest')}catch(e){}if(touchy&&!seen){$('#gest').classList.remove('hide');setTimeout(()=>$('#gest').classList.add('hide'),15000)}
  $('#bGestX').addEventListener('click',()=>{$('#gest').classList.add('hide');try{localStorage.setItem('casas-gest','1')}catch(e){}})})();
 
-const APPV=17;$('#vtag').textContent='v'+APPV;
+const APPV=18;$('#vtag').textContent='v'+APPV;
 (()=>{const el=$('#appv');let t=`Versión ${APPV} del Constructor de casas.`;const A=window.AndroidApp;
  el.innerHTML=t+(A&&A.update?' <button class="b" id="bUpd">Buscar actualización</button>':'')+' <button class="b" id="bTut">Ver tutorial</button>';$('#bTut').addEventListener('click',()=>{$('#sheet').classList.add('hide');tutStart()});if(A&&A.update)$('#bUpd').addEventListener('click',()=>{toast('Buscando actualización…');A.update()})})();
 
@@ -1216,7 +1226,7 @@ const TUT=[
  ['tool','muro','2. Muros sueltos','Con <b>Muro</b> arrastra de un punto a otro. Abajo eliges el material: ladrillo, bloque, hormigón, piedra, madera, Metalcon o panel SIP. Mientras dibujas ves el largo, y la cámara te sigue si llegas al borde.'],
  ['tool','puerta','3. Puertas','Elige abajo el tipo de puerta y toca un muro para ponerla. Después puedes arrastrarla para moverla.'],
  ['tool','ventana','4. Ventanas y ventanales','Igual que las puertas: elige el modelo abajo y toca un muro.'],
- ['tool','elegir','5. Elegir y cambiar','Toca cualquier cosa para elegirla: muro, piso, techo, puerta, ventana, mueble, camino o vereda. Abajo puedes cambiar su <b>material</b>, color, tamaño, <b>+ Puerta</b>, <b>+ Ventana</b> o <b>Borrar pedazo</b>.'],
+ ['tool','elegir','5. Elegir y cambiar','Toca cualquier cosa para elegirla: muro, piso, techo, puerta, ventana, mueble, camino o vereda. Con <b>Todos</b>, <b>Exteriores</b>, <b>Interiores</b> o <b>Varios</b> eliges muchos muros a la vez. Abajo puedes cambiar su <b>material</b>, color, tamaño, <b>+ Puerta</b>, <b>+ Ventana</b> o <b>Borrar pedazo</b>.'],
  ['tool','borrar','6. Borrar por partes','En <b>Pedazo a pedazo</b> cada toque borra un trozo de muro (25 cm, 50 cm o 1 m). También puedes arrastrar el dedo sobre el muro para ir borrando.'],
  ['#view','mano','7. Mover la cámara','<b>Dos dedos</b>: girar en todos los ángulos. <b>Pellizcar</b>: acercar o alejar. <b>Tres dedos</b> o la herramienta <b>Mover</b>: correr la vista con la mano.'],
  ['tool','mueble','8. Muebles','Elige la categoría y el mueble, y tócalo sobre el piso. En <b>Jardín</b> tienes pasto, flores, cercos, árboles, huerta y más para afuera. Arrástralo para moverlo y usa <b>↻ Girar</b>.'],
@@ -1748,6 +1758,7 @@ function build3D(){if(!R)return;try{
   else for(const f of g.rooms)mesh(polyGeo(f.pts,0.22),rm,rb).userData={t:'roof'}}
  for(const f of S.furn){const m=fModel(f.k,false,f.c);m.position.set(f.x,fY(f.x,f.y,y0),f.y);m.rotation.y=-f.r*Math.PI/180;m.userData={t:'furn',id:f.id};root.add(m);
   if(sel&&sel.k==='furn'&&sel.id===f.id){m.updateMatrixWorld(true);root.add(new THREE.BoxHelper(m,0xe2774f))}}
+ if(sel&&sel.k==='walls')for(const w of S.walls){if(!sel.ids.includes(w.id))continue;const L=Math.hypot(w.x2-w.x1,w.y2-w.y1),h=S.wv==='bajos'?LH+0.05:H+0.04;wbox(L,h,0.26,L/2,h/2,0,HL,segGroup(w.x1,y0,w.y1,Math.atan2(w.y2-w.y1,w.x2-w.x1)))}
  if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(w){const L=Math.hypot(w.x2-w.x1,w.y2-w.y1),h=S.wv==='bajos'?LH+0.05:H+0.04;wbox(L,h,0.26,L/2,h/2,0,HL,segGroup(w.x1,y0,w.y1,Math.atan2(w.y2-w.y1,w.x2-w.x1)))}}
  if(sel&&sel.k==='op'){const o=g.ops.find(q=>q.id===sel.id);if(o){const s=o.s,dr=o.t==='puerta',Wd=winOf(o),y1=dr?0:Wd.y1,y2=dr?2.12:Math.min(Wd.y2,S.H-0.08)+0.02;wbox(o.w+0.04,y2-y1+0.04,0.28,(o.a+o.b)/2,(y1+y2)/2,0,HL,segGroup(s.x1,y0,s.y1,Math.atan2(s.y2-s.y1,s.x2-s.x1)))}}
  if(sel&&sel.k==='room'){const f=roomAt(sel);if(f)mesh(polyGeo(f.pts,0.02),HL,y0+0.03)}
