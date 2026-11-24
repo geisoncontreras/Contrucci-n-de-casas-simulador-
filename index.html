@@ -325,7 +325,7 @@ function buildGeo(walls,opsIn,labels){
   if(!s)continue;
   const px=w.x1+(w.x2-w.x1)*tc,py=w.y1+(w.y2-w.y1)*tc,along=Math.hypot(px-s.x1,py-s.y1);
   const a=Math.max(0,along-wd/2),b=Math.min(s.len,along+wd/2);
-  ops.push({id:o.id,t:o.t,v:o.v,c:o.c,s,a,b,w:b-a,ext:s.ext,cx:px,cy:py})}
+  ops.push({id:o.id,t:o.t,v:o.v,c:o.c,mat:o.mat,s,a,b,w:b-a,ext:s.ext,cx:px,cy:py})}
  return{walls:W,segs,faces,rooms,area,ext,int,ops,mnx,mny,mxx,mxy,bw:mxx-mnx,bh:mxy-mny,cx:(mnx+mxx)/2,cy:(mny+mxy)/2,inPoly}
 }
 
@@ -365,7 +365,7 @@ const TOOLS=[['cuarto','Habitación','Arrastra en diagonal sobre el suelo: se le
  ['piso','Piso','Elige un piso abajo y toca una habitación. Con «Por cuadros» arrastra el dedo para poner el piso solo en una parte.'],
  ['techo','Techo','Elige abajo la forma y el material del techo.'],
  ['tierra','Terreno','Toca o arrastra sobre el terreno para subir, bajar o aplanar la tierra. Abajo puedes girar la casa, girar el cerro y mover la casa más arriba o más abajo.'],
- ['elegir','Elegir','Toca algo para editarlo. Arrastra muebles, puertas y ventanas para moverlos.'],
+ ['elegir','Elegir','Toca cualquier cosa (muro, piso, techo, puerta, ventana, mueble, camino o vereda) para cambiar su material o editarlo. Arrastra muebles, puertas y ventanas para moverlos.'],
  ['borrar','Borrar','Toca lo que quieras quitar. Los muros se borran pedazo a pedazo: arrastra el dedo para seguir borrando.'],
  ['mano','Mover','Arrastra con un dedo para mover el escenario de lugar (con el mouse, para girar). Dos dedos giran y acercan.']];
 const WIN={estandar:{n:'Ventana',wd:1.2,y1:0.9,y2:1.9,st:'abat'},corredera:{n:'Corredera',wd:1.8,y1:0.9,y2:2.0,st:'corr'},doble:{n:'Doble hoja',wd:1.5,y1:0.9,y2:1.9,st:'doble'},
@@ -488,7 +488,11 @@ const TPL={
   [['alfombra',1.6,2,90],['sofa',0.515,2,270],['mesac',1.55,2,90],['tv',2.9,2,90],['planta',0.4,0.45,0],['comedor',4.7,2,0],['refri',7.56,0.45,90],['lavaplatos',7.61,2,90],['cocina',7.61,3,90],
    ['cama2',1.75,6.41,180],['closet',3.15,5,90],['velador',0.6,7.21,180],['cama2',6.5,6.41,180],['inodoro',4,5.8,180],['lavamanos',4.725,5.2,90]])
 };
-const DEF={conc:{},snd:1,prices:{},ftile:{},vered:0,zoc:0,paths:[],terR:0,terX:0,terZ:0,roofF:1,roofX:{},roofP:20,roofO:0,roofC:null,ter:'ciudad',pisos:1,H:2.4,muro:'ladrillo',techo:'zinc',roofMode:'dos',merma:10,env:true,snap:0.25,fach:'visto',wv:'corte',padOff:0};
+const DOORM={madera:['Madera',0x7a4f2c,1],mdf:['MDF pintado',0xe2d6c0,0.7],pvc:['PVC',0xf0f0ec,1.15],alum:['Aluminio',0xb9bcc0,1.3],acero:['Acero',0x4a4d52,1.6]};
+const WINM={alum:['Aluminio',0x34383c,1],alumb:['Aluminio blanco',0xe8e8e4,1.05],pvc:['PVC',0xf4f4f0,1.35],madera:['Madera',0x8b5a33,1.5]};
+const PATHM={hormigon:['Hormigón',0xb9b6ae],adoquin:['Adoquín',0x9a8478],gravilla:['Gravilla o maicillo',0xcdbf9e],laja:['Piedra laja',0x8f8a80],deck:['Deck de madera',0x9b6d45],pastob:['Pasto con bloques',0x7fa85a]};
+const FURNM=[['Original',null],['Madera clara',0xd2b48c],['Madera',0x9b7650],['Nogal',0x5a3c28],['Melamina blanca',0xf2f0ea],['Metal negro',0x2a2b2d],['Tela gris',0x8f9093],['Tela azul',0x3f6fa8],['Tela verde',0x6f9a8a],['Cuero café',0x6e4b32]];
+const DEF={veredM:'hormigon',conc:{},snd:1,prices:{},ftile:{},vered:0,zoc:0,paths:[],terR:0,terX:0,terZ:0,roofF:1,roofX:{},roofP:20,roofO:0,roofC:null,ter:'ciudad',pisos:1,H:2.4,muro:'ladrillo',techo:'zinc',roofMode:'dos',merma:10,env:true,snap:0.25,fach:'visto',wv:'corte',padOff:0};
 let S,G,VB,tool='cuarto',sel=null,act=null,prev=null,ghost=null,undo=[],photo=null,under=null,DL=null,M=null;
 let cal=null,UT=null;
 let doorK='simple',winK='estandar',cat='Dormitorio',fk='cama2',frot=0,paint='salvia',floorK='madera',tmode='subir',brush=1.5,pathW=1.2,fmode='cuarto',fsize=0.5;
@@ -676,17 +680,25 @@ function calc(){
  if(fa.hormigon)add(TR,'Sellador para hormigón pulido',up(fa.hormigon/8*f),'litros','Sobre el radier afinado');
  const cols=[...new Set([...g.rooms.map(r=>r.wp||'blanco'),S.fach||'visto'].filter(k=>k!=='visto'))].map(k=>PAINT[k][0]);
  add(TR,'Pintura (2 manos)',up((wallA*2+A*P)*2/10/3.78*f),'galones','≈ 10 m² por litro'+(cols.length?'. Colores: '+cols.join(', '):''));
- const it={};for(let k=0;k<P;k++)for(const o of g.ops){let t=o.t;if(k>0&&t==='puerta'&&o.ext)t='ventana';
-  const Dn=t==='puerta'?doorOf(o):null,Wn=t==='puerta'?null:winOf(t===o.t?o:null),key=t==='puerta'?(Dn.st==='vano'||Dn.st==='arco'?`${Dn.n} ${fm(o.w)} m (solo marco y terminación)`:`${Dn.n==='Puerta'?'Puerta '+(o.ext?'exterior':'interior'):Dn.n} ${fm(o.w)} × ${fm(Dn.h)} m`):`${Wn.n} ${fm(o.w)} × ${fm(Math.min(Wn.y2,H-0.08)-Wn.y1)} m`;
-  if(!it[key])it[key]={n:0,nt:t==='puerta'?({vano:'Pilastras y dintel',arco:'Arco de yeso o albañilería',garaje:'Seccional o basculante, con riel',corr:'Corredera de aluminio con vidrio templado',vidrio:'Marco de madera o aluminio con vidrio',bolsa:'Riel oculto dentro del muro'}[Dn.st]||'Con marco y bisagras'):Wn.st==='corr'||Wn.st==='corr3'?'Corredera de aluminio o PVC con vidrio':Wn.y1<0.5?'Vidrio templado o laminado (llega al piso)':'Aluminio o PVC con vidrio'};it[key].n++}
+ const it={};for(const k in OPP)delete OPP[k];for(let k=0;k<P;k++)for(const o of g.ops){let t=o.t;if(k>0&&t==='puerta'&&o.ext)t='ventana';
+  const Dn=t==='puerta'?doorOf(o):null,Wn=t==='puerta'?null:winOf(t===o.t?o:null),key=t==='puerta'?(Dn.st==='vano'||Dn.st==='arco'?`${Dn.n} ${fm(o.w)} m (solo marco y terminación)`:`${Dn.n==='Puerta'?'Puerta '+(o.ext?'exterior':'interior'):Dn.n} ${fm(o.w)} × ${fm(Dn.h)} m`):`${Wn.n} ${fm(o.w)} × ${fm(Math.min(Wn.y2,H-0.08)-Wn.y1)} m`;const MM=t==='puerta'?DOORM[o.mat]:WINM[o.mat],key2=key+(MM?` (${MM[0].toLowerCase()})`:'');
+  if(!OPP[key2]){const mul=MM?MM[2]:1;OPP[key2]=t==='puerta'?(Dn.st==='vano'||Dn.st==='arco'?60000:Dn.st==='garaje'?650000:Math.round((o.ext?160000:75000)*o.w/0.85*mul/1000)*1000):Math.round(o.w*(Math.min(Wn.y2,H-0.08)-Wn.y1)*110000*mul/1000)*1000}
+  if(it[key2]){it[key2].n++;continue}it[key2]={n:0,nt:t==='puerta'?({vano:'Pilastras y dintel',arco:'Arco de yeso o albañilería',garaje:'Seccional o basculante, con riel',corr:'Corredera de aluminio con vidrio templado',vidrio:'Marco de madera o aluminio con vidrio',bolsa:'Riel oculto dentro del muro'}[Dn.st]||'Con marco y bisagras'):Wn.st==='corr'||Wn.st==='corr3'?'Corredera de aluminio o PVC con vidrio':Wn.y1<0.5?'Vidrio templado o laminado (llega al piso)':'Aluminio o PVC con vidrio'};it[key2].n++}
  Object.keys(it).sort().forEach(k=>add(TR,k,it[k].n,'u',it[k].nt));
  const nO=Object.values(it).reduce((a,b)=>a+b.n,0);if(nO)add(TR,'Sellante de silicona',up(nO*0.5*f)+1,'cartuchos');
  const AM='Artefactos y muebles',fc={};for(const x of S.furn){if(FURN[x.k])fc[x.k]=(fc[x.k]||0)+1}
  Object.keys(fc).forEach(k=>add(AM,FURN[k].n,fc[k],'u',FURN[k].c));
  {const EX='Exterior: vereda, caminos y base',vw=+S.vered||0,zh=S.ter==='playa'?0:+S.zoc||0;
-  if(vw){const a=g.ext*vw+4*vw*vw,v=a*0.08;hc+=v;malla+=a;add(EX,'Ripio compactado bajo la vereda',m1(a*0.1*f),'m³');add(EX,`Vereda de hormigón ${vw*100} cm de ancho`,m1(v),'m³',`${nf(a,1)} m² alrededor de la casa, 8 cm de espesor`);add(EX,'Junta de dilatación (cada 2 m)',up(g.ext/2*f),'cortes')}
-  const ps=S.paths||[];if(ps.length){const a=ps.reduce((t,p)=>t+Math.hypot(p.x2-p.x1,p.y2-p.y1)*p.w,0),th=ps.some(p=>p.w>=2.5)?0.12:0.08,v=a*th;hc+=v;malla+=a;add(EX,'Ripio compactado bajo los caminos',m1(a*0.1*f),'m³');
-   add(EX,`Caminos de hormigón (${ps.length})`,m1(v),'m³',`${nf(a,1)} m², ${th*100} cm de espesor${th>0.08?' (pasa auto)':''}`);add(EX,'Moldaje de borde (tablas 1"×4")',up(ps.reduce((t,p)=>t+2*Math.hypot(p.x2-p.x1,p.y2-p.y1),0)/3.2*f),'u')}
+  const surf=(m,a,what,auto)=>{if(a<0.01)return;const nm=PATHM[m]?m:'hormigon';
+   if(nm==='hormigon'){const th=auto?0.12:0.08,v=a*th;hc+=v;malla+=a;add(EX,'Ripio compactado bajo '+what,m1(a*0.1*f),'m³');add(EX,`${what[0].toUpperCase()+what.slice(1)}: hormigón`,m1(v),'m³',`${nf(a,1)} m², ${th*100} cm de espesor${auto?' (pasa auto)':''}`);return}
+   if(nm==='adoquin'){add(EX,'Adoquín de hormigón',m1(a*f),'m²',`${what}; ≈ 50 por m²`);add(EX,'Arena para cama de adoquín',m1(a*0.05*f),'m³');add(EX,'Ripio compactado bajo '+what,m1(a*0.15*f),'m³')}
+   else if(nm==='gravilla'){add(EX,'Gravilla o maicillo',m1(a*0.08*f),'m³',`${what}, 8 cm`);add(EX,'Malla antimaleza',up(a*1.1*f),'m²')}
+   else if(nm==='laja'){add(EX,'Piedra laja',m1(a*f),'m²',what);mort+=a*0.03;add(EX,'Ripio compactado bajo '+what,m1(a*0.1*f),'m³')}
+   else if(nm==='deck'){add(EX,'Deck de pino impregnado',m1(a*f),'m²',what);add(EX,'Vigas 2"×4" impregnadas × 3,2 m',up(a/0.5/3.2*f),'u','Cada 50 cm')}
+   else if(nm==='pastob'){add(EX,'Bloque pasto (huella)',m1(a*f),'m²',what);add(EX,'Tierra de hoja',m1(a*0.05*f),'m³')}};
+  if(vw)surf(S.veredM,g.ext*vw+4*vw*vw,'la vereda');
+  const ps=S.paths||[];if(ps.length){const by={};for(const p of ps){const m=PATHM[p.m]?p.m:'hormigon',k=m+(p.w>=2.5?'+':'');by[k]=(by[k]||0)+Math.hypot(p.x2-p.x1,p.y2-p.y1)*p.w}
+   for(const k of Object.keys(by))surf(k.replace('+',''),by[k],'los caminos',k.endsWith('+'));if(ps.some(p=>!p.m||p.m==='hormigon'))add(EX,'Moldaje de borde (tablas 1"×4")',up(ps.reduce((t,p)=>t+2*Math.hypot(p.x2-p.x1,p.y2-p.y1),0)/3.2*f),'u')}
   if(zh){const per=g.ext,v=per*zh*0.2,nd=g.ops.filter(o=>o.t==='puerta'&&o.ext).length,ns=Math.ceil(zh/0.18),ve=nd*1.2*0.28*ns*zh/2;hc+=v+ve;E+=per;
    add(EX,`Base elevada: muro de hormigón 20 cm × ${fm(zh)} m`,m1(v),'m³',`La casa queda ${fm(zh)} m más alta; ${nf(per,1)} m de perímetro`);
    add(EX,'Relleno compactado bajo el piso',m1(A*zh*f),'m³','Estabilizado en capas de 20 cm');
@@ -707,7 +719,7 @@ function calc(){
 }
 
 /* ---------- precios estimados (CLP, editables) ---------- */
-const PR=[[/^Hormigón H25/,110000],[/^Cemento/,4800],[/^Arena/,25000],[/^Grava/,28000],[/^Bolón/,22000],[/^Ripio/,22000],[/^Fierro estriado/,9500],[/^Fierro liso/,1800],[/^Alambre/,2500],[/^Malla Acma/,32000],[/^Malla acma/,45000],
+const PR=[[/^Adoquín/,16000],[/^Arena para cama/,25000],[/^Gravilla/,25000],[/^Malla antimaleza/,900],[/^Piedra laja/,22000],[/^Deck de pino/,35000],[/^Vigas 2"×4"/,4500],[/^Bloque pasto/,18000],[/^Tierra de hoja/,30000],[/^Hormigón H25/,110000],[/^Cemento/,4800],[/^Arena/,25000],[/^Grava/,28000],[/^Bolón/,22000],[/^Ripio/,22000],[/^Fierro estriado/,9500],[/^Fierro liso/,1800],[/^Alambre/,2500],[/^Malla Acma/,32000],[/^Malla acma/,45000],
  [/^Polietileno/,600],[/^Ladrillo/,380],[/^Bloque de hormigón/,750],[/^Piedra canteada/,60000],[/^Moldaje: tablas/,6500],[/^Moldaje fenólico/,45000],[/^Moldaje de borde/,2500],[/^Desmoldante/,4000],
  [/^Pino 2"×4"/,3200],[/^OSB 11/,11500],[/^OSB 18/,19000],[/^Yeso-cartón/,6800],[/^Lana de vidrio 50/,24000],[/^Lana de vidrio 100/,26000],[/^Barrera de humedad/,22000],[/^Fieltro/,22000],[/^Revestimiento fibrocemento/,16000],[/^Clavos/,3000],
  [/^Montante Metalcon/,7500],[/^Canal Metalcon/,6500],[/^Tornillos autoperforantes/,6000],[/^Panel SIP/,85000],[/^Espuma de poliuretano/,6000],
@@ -717,8 +729,9 @@ const PR=[[/^Hormigón H25/,110000],[/^Cemento/,4800],[/^Arena/,25000],[/^Grava/
  [/^Cerámica o porcelanato/,9000],[/^Adhesivo cerámico/,6000],[/^Fragüe/,1500],[/^Piso flotante/,9500],[/^Espuma niveladora/,900],[/^Guardapolvo/,1500],[/^Alfombra de muro/,12000],[/^Sellador/,9000],[/^Piso vinílico/,12000],[/^Adhesivo para vinílico/,25000],
  [/^Pintura/,22000],[/^Puerta exterior/,160000],[/^Puerta/,75000],[/^Sellante/,4500],[/^Excavación/,8000],[/^Relleno compactado/,10000],[/^Material de relleno/,18000],[/^Tierra sobrante/,6000],[/^Viajes de camión/,70000],
  [/^Retroexcavadora/,35000],[/^Arriendo de placa/,30000],[/^Tubo de drenaje/,3500],[/^Grava para drenaje/,28000],[/^Pilotes/,18000],[/^Pernos/,1500],[/^Poliestireno/,3500],[/^OSB 11 mm 1,22×2,44 m \(piso\)/,19000],[/^OSB 18 mm 1,22×2,44 m \(piso\)/,19000]];
-const PINC=/^(Hormigón total|Hormigón para rellenar|Mortero|Estuco|Cimiento|Sobrecimiento|Radier|Losa de entrepiso|Losa flotante|Pilares|Cadenas|Muro de hormigón|Muro de contención|Dados|Vereda|Caminos|Base elevada|Escaleras|Junta)/;
-function priceOf(n){const P=S.prices||{};if(P[n]!=null)return +P[n];if(PINC.test(n))return null;const w=n.match(/^Ventana ([\d,]+) × ([\d,]+)/);if(w)return Math.round(parseFloat(w[1].replace(',','.'))*parseFloat(w[2].replace(',','.'))*110000/1000)*1000;
+const PINC=/^(La vereda: hormigón|Los caminos: hormigón|Hormigón total|Hormigón para rellenar|Mortero|Estuco|Cimiento|Sobrecimiento|Radier|Losa de entrepiso|Losa flotante|Pilares|Cadenas|Muro de hormigón|Muro de contención|Dados|Vereda|Caminos|Base elevada|Escaleras|Junta)/;
+const OPP={};
+function priceOf(n){const P=S.prices||{};if(P[n]!=null)return +P[n];if(OPP[n])return OPP[n];if(PINC.test(n))return null;const w=n.match(/^Ventana ([\d,]+) × ([\d,]+)/);if(w)return Math.round(parseFloat(w[1].replace(',','.'))*parseFloat(w[2].replace(',','.'))*110000/1000)*1000;
  for(const[r,v]of PR)if(r.test(n))return v;return 0}
 
 function renderMat(){
@@ -859,7 +872,7 @@ function tDown(p,pk,src){if(!p)return;ghost=null;hover.k='';const t=tool;
   snap();const q=placeF(fk,p,frot),f={id:uid(),k:fk,...q};S.furn.push(f);sel={k:'furn',id:f.id};act={k:'mf',id:f.id,dx:0,dy:0,r0:frot,moved:true,src};live();renderPanel();renderSub();return}
  if(t==='elegir'){if(pk.furn)return grabF(pk.furn,p);
   if(pk.op){snap();sel={k:'op',id:pk.op.id};act={k:'mop',id:pk.op.id,moved:false,src};refreshSel();return}
-  if(pk.wall)sel={k:'wall',id:pk.wall.w.id,t:pk.wall.t};else if(pk.room)sel={k:'room',x:pk.room.c[0],y:pk.room.c[1]};else sel=null;refreshSel();return}
+  if(pk.roof&&!pk.wall&&!pk.room)sel={k:'roof'};else if(pk.wall)sel={k:'wall',id:pk.wall.w.id,t:pk.wall.t};else if(pk.room)sel={k:'room',x:pk.room.c[0],y:pk.room.c[1]};else{const q=pk.path||(pk.p&&pathAt(pk.p));if(q)sel={k:'path',id:q.id};else if(pk.vered||(pk.p&&veredAt(pk.p)))sel={k:'vered'};else sel=null}refreshSel();return}
  if(t==='borrar'){sfx('del');if(pk.furn){snap();S.furn=S.furn.filter(q=>q!==pk.furn);sel=null;commit(true);return}
   if(pk.op){snap();S.ops=S.ops.filter(q=>q.id!==pk.op.id);sel=null;commit(true);return}
   if(pk.wall){const w=pk.wall.w,L=pk.wall.L,t=pk.wall.t;
@@ -915,7 +928,9 @@ hover.k='';
 
 /* interacción del plano */
 const PT=new Map();
-function pkPlan(p){const r=roomAt(p),w=nearWall(p);return{p,furn:furnAt(p),op:nearOp(p),wall:w,room:r,facade:!r&&!!w}}
+function pathAt(p){for(const q of [...(S.paths||[])].reverse()){const dx=q.x2-q.x1,dy=q.y2-q.y1,L2=dx*dx+dy*dy;if(!L2)continue;const t=clamp(((p.x-q.x1)*dx+(p.y-q.y1)*dy)/L2,0,1);if(Math.hypot(q.x1+dx*t-p.x,q.y1+dy*t-p.y)<=q.w/2+0.15)return q}return null}
+function veredAt(p){const v=+S.vered||0;if(!v||!G.rooms.length||roomAt(p))return false;return footRects(G).some(r=>p.x>=r.x-v&&p.x<=r.x+r.w+v&&p.y>=r.y-v&&p.y<=r.y+r.d+v)}
+function pkPlan(p){const r=roomAt(p),w=nearWall(p);return{p,furn:furnAt(p),op:nearOp(p),wall:w,room:r,facade:!r&&!!w,path:!r&&!w?pathAt(p):null,vered:!r&&!w&&veredAt(p)}}
 plan.addEventListener('contextmenu',e=>e.preventDefault());
 plan.addEventListener('pointerdown',e=>{plan.setPointerCapture(e.pointerId);PT.set(e.pointerId,[e.clientX,e.clientY]);
  if(PT.size===2){if(act&&(act.k==='muro'||act.k==='cuarto')){prev=null;act=null}else if(act)tUp();const a=[...PT.values()],c=[(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2];act={k:'pinch',vb:{...VB},d:Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]),c,cs:spt({clientX:c[0],clientY:c[1]})};refresh();return}
@@ -960,7 +975,7 @@ function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';cons
  const selO=sel&&sel.k==='op'&&S.ops.find(q=>q.id===sel.id);
  const winCards=cur=>Object.entries(WIN).map(([k,W])=>`<button class="card${k===cur?' on':''}" data-win="${k}">${winSvg(k)}<b>${W.n}</b><small>${fmm(W.wd)} × ${fmm(W.y2-W.y1)} m</small></button>`).join('');
  const colBtns=(it,L)=>'<span class="sep"></span><span class="lbl">Color</span>'+L.map(([n,c])=>sw('oc',c==null?'':c,n,c==null?'linear-gradient(135deg,#ddd 50%,#999 50%)':hex(c),(it.c==null?null:it.c)===c)).join('');
- const opBtns=o=>colBtns(S.ops.find(q=>q.id===o.id)||o,FRAMEC)+`<span class="sep"></span><button data-act="wd-">− Angosta</button><button data-act="wd+">+ Ancha</button>${o.t==='puerta'?'<button data-act="type">Cambiar a ventana</button>':''}<button class="danger" data-act="del">Borrar</button>`;
+ const opBtns=o=>(o2=>{const so=S.ops.find(q=>q.id===o.id)||o,MT=o.t==='puerta'?DOORM:WINM,cur=so.mat||(o.t==='puerta'?'madera':'alum');return '<span class="sep"></span><span class="lbl">Material</span>'+Object.entries(MT).map(([k,[n,c]])=>sw('opm',k,n,hex(c),cur===k,1)).join('')+colBtns(so,FRAMEC)})(o)+`<span class="sep"></span><button data-act="wd-">− Angosta</button><button data-act="wd+">+ Ancha</button>${o.t==='puerta'?'<button data-act="type">Cambiar a ventana</button>':''}<button class="danger" data-act="del">Borrar</button>`;
  el.classList.toggle('two',tool==='mueble'&&!cal);
  if(tool==='mueble'){h='<div class="row">'+CATS.map(c=>`<button class="cat${c===cat?' on':''}" data-cat="${c}">${c}</button>`).join('')+'<span class="sep"></span><button data-act="rot">↻ Girar</button>'+(sel&&sel.k==='furn'?'<button class="danger" data-act="del">Borrar</button>':'')+'</div><div class="row">'+
   Object.entries(FURN).filter(([,F])=>F.c===cat).map(([k,F])=>{const th=typeof fThumb==='function'?fThumb(k):'';return`<button class="card${k===fk?' on':''}" data-fk="${k}">${th?`<img src="${th}" alt="">`:`<span class="fic" style="background:${F.pc}"></span>`}<b>${F.n}</b><small>${fmm(F.w)} × ${fmm(F.d)} m</small></button>`}).join('')+'</div>'}
@@ -987,10 +1002,13 @@ function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';cons
   [[0.8,'Pincel chico'],[1.5,'Mediano'],[3,'Grande']].map(([v,n])=>`<button class="${brush===v?'on':''}" data-br="${v}">${n}</button>`).join('')+
   (G.rb?`<span class="sep"></span><span class="lbl">Plataforma de la casa ${G.pad>=0?'+':'−'}${fm(Math.abs(G.pad))} m</span><button data-act="padup">Subir 10 cm</button><button data-act="paddn">Bajar 10 cm</button>${S.padOff?'<button data-act="pad0">Automática</button>':''}`:'')+
   `<span class="sep"></span><span class="lbl">Corte ${nf(G.cut,1)} m³ · Relleno ${nf(G.fill,1)} m³</span><button data-act="digreset">Terreno original</button>`;
- else if(sel&&sel.k==='furn'){const f=S.furn.find(q=>q.id===sel.id);if(f)h=`<span class="lbl">${FURN[f.k].n}</span><button data-act="rot">↻ Girar</button><button class="danger" data-act="del">Borrar</button>`+colBtns(f,FRAMEC.concat(Object.values(PAINT).map(([n,c])=>[n,c])))}
+ else if(sel&&sel.k==='furn'){const f=S.furn.find(q=>q.id===sel.id);if(f)h=`<span class="lbl">${FURN[f.k].n}</span><button data-act="rot">↻ Girar</button><button class="danger" data-act="del">Borrar</button>`+colBtns(f,FURNM.concat(Object.values(PAINT).map(([n,c])=>[n,c])))}
  
  else if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(w)h=`<span class="lbl">Muro de ${fm(Math.hypot(w.x2-w.x1,w.y2-w.y1))} m</span><button data-act="addp">+ Puerta</button><button data-act="addv">+ Ventana</button><span class="sep"></span><button class="danger" data-act="delp">Borrar pedazo (${bsize<1?bsize*100+' cm':'1 m'})</button><button class="danger" data-act="del">Borrar muro entero</button><span class="sep"></span><span class="lbl">Material</span>`+Object.entries(MUROS).map(([k,[n,c]])=>sw('wmw',k,n,c,wMat(w)===k,1)).join('')}
- else if(sel&&sel.k==='room'){const f=roomAt(sel);if(f)h=`<span class="lbl">${f.name?esc(f.name)+' · ':''}${nf(f.area,2)} m²</span><button data-gotool="pintar">Pintar paredes</button><button data-gotool="piso">Cambiar piso</button><button data-gotool="mueble">Amoblar</button>`}
+ else if(sel&&sel.k==='room'){const f=roomAt(sel);if(f)h=`<span class="lbl">${f.name?esc(f.name)+' · ':''}${nf(f.area,2)} m²</span><button data-gotool="pintar">Pintar paredes</button><button data-gotool="mueble">Amoblar</button><span class="sep"></span><span class="lbl">Piso</span>`+Object.entries(FLOOR).map(([k,[n,,bg]])=>sw('rfp',k,n,bg,(f.fp||'ceramica')===k,1)).join('')}
+ else if(sel&&sel.k==='path'){const q=(S.paths||[]).find(x=>x.id===sel.id);if(q)h=`<span class="lbl">Camino de ${fm(Math.hypot(q.x2-q.x1,q.y2-q.y1))} m</span>`+Object.entries(PATHM).map(([k,[n,c]])=>sw('pm',k,n,hex(c),(q.m||'hormigon')===k,1)).join('')+'<span class="sep"></span>'+[[0.8,'Angosto'],[1.2,'Normal'],[3,'Para auto']].map(([v,n])=>`<button class="${q.w===v?'on':''}" data-pwq="${v}">${n}</button>`).join('')+'<button class="danger" data-act="del">Borrar</button>'}
+ else if(sel&&sel.k==='vered')h='<span class="lbl">Vereda</span>'+Object.entries(PATHM).map(([k,[n,c]])=>sw('vm',k,n,hex(c),(S.veredM||'hormigon')===k,1)).join('')+'<span class="sep"></span>'+[[0,'Quitar'],[0.6,'60 cm'],[1,'1 m'],[1.5,'1,5 m']].map(([v,n])=>`<button class="${(+S.vered||0)===v?'on':''}" data-ver="${v}">${n}</button>`).join('');
+ else if(sel&&sel.k==='roof')h='<span class="lbl">Techo</span>'+Object.entries(ROOFM).map(([k,[n,c]])=>`<button class="${S.techo===k?'on':''}" data-rmat="${k}"><i style="background:${hex(c)}"></i>${n}</button>`).join('')+'<span class="sep"></span><button data-gotool="techo">Forma, inclinación y color</button>';
  el.innerHTML=h}
 $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
  if(d.cat){cat=d.cat;fk=Object.keys(FURN).find(k=>FURN[k].c===cat);renderSub();return}
@@ -1012,6 +1030,11 @@ $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
  if(d.fk){fk=d.fk;sel=null;renderSub();refreshSel();return}
  if(d.paint){paint=d.paint;renderSub();return}
  if(d.floor){floorK=d.floor;renderSub();return}
+ if(d.opm){const o=sel&&sel.k==='op'&&S.ops.find(q=>q.id===sel.id);if(o){snap();o.mat=d.opm;delete o.c;commit(true);toast('Material: '+b.textContent)}return}
+ if(d.rfp){const f=sel&&sel.k==='room'&&roomAt(sel);if(f){snap();setRoomProp(f,'fp',d.rfp);for(const k of Object.keys(S.ftile||{})){const c=tileC(k);if(G.inPoly(c.cx,c.cy,f.pts))delete S.ftile[k]}commit(true);toast('Piso: '+b.textContent)}return}
+ if(d.pm){const q=sel&&sel.k==='path'&&(S.paths||[]).find(x=>x.id===sel.id);if(q){snap();q.m=d.pm;commit(true);toast('Camino de '+b.textContent.toLowerCase())}return}
+ if(d.pwq){const q=sel&&sel.k==='path'&&(S.paths||[]).find(x=>x.id===sel.id);if(q){snap();q.w=+d.pwq;commit(true)}return}
+ if(d.vm){snap();S.veredM=d.vm;commit(true);toast('Vereda de '+b.textContent.toLowerCase());return}
  if(d.wm){wallMk=d.wm;renderSub();toast('Los muros nuevos serán de '+MUROS[d.wm][0].toLowerCase());return}
  if(d.wmw){const w=sel&&sel.k==='wall'&&S.walls.find(q=>q.id===sel.id);if(w){snap();w.m=d.wmw;commit(true);toast('Muro de '+MUROS[d.wmw][0].toLowerCase())}return}
  if(d.fm){fmode=d.fm;if(fmode==='cuarto'&&floorK==='quitar')floorK='madera';renderSub();toast(fmode==='cuadro'?'Arrastra el dedo sobre el piso para pintarlo por cuadros':'Toca una habitación para cambiar todo su piso');return}
@@ -1047,6 +1070,7 @@ $('#seg').addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(!
 
 /* ---------- panel de selección ---------- */
 function delSel(){if(!sel)return;snap();if(sel.k==='op')S.ops=S.ops.filter(o=>o.id!==sel.id);
+ else if(sel.k==='path')S.paths=(S.paths||[]).filter(q=>q.id!==sel.id);
  else if(sel.k==='wall'){S.walls=S.walls.filter(w=>w.id!==sel.id);S.ops=S.ops.filter(o=>o.w!==sel.id)}
  else if(sel.k==='furn')S.furn=S.furn.filter(f=>f.id!==sel.id);sel=null;commit(true)}
 function rotHouse(){if(!S.walls.length){toast('Primero dibuja la casa');return}snap();const b=G.rb||rboxOf(G),cx=Math.round((b.x+b.w/2)*2)/2,cy=Math.round((b.y+b.d/2)*2)/2,R=(x,y)=>[r2(cx-(y-cy)),r2(cy+(x-cx))];
@@ -1173,7 +1197,7 @@ $('#bWv').addEventListener('click',()=>{const ks=Object.keys(WVN);S.wv=ks[(ks.in
 (()=>{let seen=false;try{seen=!!localStorage.getItem('casas-gest')}catch(e){}if(touchy&&!seen){$('#gest').classList.remove('hide');setTimeout(()=>$('#gest').classList.add('hide'),15000)}
  $('#bGestX').addEventListener('click',()=>{$('#gest').classList.add('hide');try{localStorage.setItem('casas-gest','1')}catch(e){}})})();
 
-const APPV=16;$('#vtag').textContent='v'+APPV;
+const APPV=17;$('#vtag').textContent='v'+APPV;
 (()=>{const el=$('#appv');let t=`Versión ${APPV} del Constructor de casas.`;const A=window.AndroidApp;
  el.innerHTML=t+(A&&A.update?' <button class="b" id="bUpd">Buscar actualización</button>':'')+' <button class="b" id="bTut">Ver tutorial</button>';$('#bTut').addEventListener('click',()=>{$('#sheet').classList.add('hide');tutStart()});if(A&&A.update)$('#bUpd').addEventListener('click',()=>{toast('Buscando actualización…');A.update()})})();
 
@@ -1192,7 +1216,7 @@ const TUT=[
  ['tool','muro','2. Muros sueltos','Con <b>Muro</b> arrastra de un punto a otro. Abajo eliges el material: ladrillo, bloque, hormigón, piedra, madera, Metalcon o panel SIP. Mientras dibujas ves el largo, y la cámara te sigue si llegas al borde.'],
  ['tool','puerta','3. Puertas','Elige abajo el tipo de puerta y toca un muro para ponerla. Después puedes arrastrarla para moverla.'],
  ['tool','ventana','4. Ventanas y ventanales','Igual que las puertas: elige el modelo abajo y toca un muro.'],
- ['tool','elegir','5. Elegir y cambiar','Toca un muro, puerta, ventana o mueble para elegirlo. Abajo aparecen sus opciones: color, tamaño, <b>+ Puerta</b>, <b>+ Ventana</b> o <b>Borrar pedazo</b>.'],
+ ['tool','elegir','5. Elegir y cambiar','Toca cualquier cosa para elegirla: muro, piso, techo, puerta, ventana, mueble, camino o vereda. Abajo puedes cambiar su <b>material</b>, color, tamaño, <b>+ Puerta</b>, <b>+ Ventana</b> o <b>Borrar pedazo</b>.'],
  ['tool','borrar','6. Borrar por partes','En <b>Pedazo a pedazo</b> cada toque borra un trozo de muro (25 cm, 50 cm o 1 m). También puedes arrastrar el dedo sobre el muro para ir borrando.'],
  ['#view','mano','7. Mover la cámara','<b>Dos dedos</b>: girar en todos los ángulos. <b>Pellizcar</b>: acercar o alejar. <b>Tres dedos</b> o la herramienta <b>Mover</b>: correr la vista con la mano.'],
  ['tool','mueble','8. Muebles','Elige la categoría y el mueble, y tócalo sobre el piso. En <b>Jardín</b> tienes pasto, flores, cercos, árboles, huerta y más para afuera. Arrástralo para moverlo y usa <b>↻ Girar</b>.'],
@@ -1409,6 +1433,24 @@ function posLab(){const el=$('#lab3');if(!el)return;const l=FX&&FX.lab;if(!l||!c
  el.style.left=((v.x+1)/2*cv.clientWidth)+'px';el.style.top=((1-v.y)/2*cv.clientHeight)+'px';el.textContent=l.t;el.style.display='block'}
 
 /* muebles: modelos simples hechos con cajas y cilindros */
+/* ---------- árboles más realistas ---------- */
+const TG_={},LEAFM={},BARK={};
+function blobGeo(i){if(TG_[i])return TG_[i];const g=new THREE.IcosahedronGeometry(1,2),p=g.attributes.position,v=new THREE.Vector3();
+ for(let k=0;k<p.count;k++){v.fromBufferAttribute(p,k);const n=Math.sin(v.x*5.1+i*1.7)*Math.cos(v.y*4.3-i)*Math.sin(v.z*6.7+i*0.5),m=0.82+0.22*n+0.08*Math.sin((v.x+v.z)*11+i);p.setXYZ(k,v.x*m,v.y*m*0.92,v.z*m)}
+ g.computeVertexNormals();return TG_[i]=g}
+const leafM=c=>LEAFM[c]||(LEAFM[c]=new THREE.MeshStandardMaterial({color:c,roughness:0.95,flatShading:true}));
+const barkM=c=>BARK[c]||(BARK[c]=new THREE.MeshStandardMaterial({color:c,roughness:1}));
+function mkTree(kind,s,rf,gh){const g=new THREE.Group(),R=rf||Math.random,LG=[0x3d6e33,0x4a7d38,0x58893f,0x3a6630,0x6a9645],AU=[0x8a9a3c,0xb08a35,0x6f8c3a];
+ const lm=c=>gh?GM:leafM(c),bm=c=>gh?GM:barkM(c),cyl=(r1,r2,h,m,x,y,z,rx,rz)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,7),m);o.position.set(x,y,z);o.rotation.set(rx||0,0,rz||0);o.castShadow=!gh;g.add(o);return o},
+  blob=(r,x,y,z,c,sy)=>{const o=new THREE.Mesh(blobGeo((R()*6)|0),lm(c));o.scale.set(r,r*(sy||1),r);o.position.set(x,y,z);o.rotation.y=R()*6;o.castShadow=!gh;o.receiveShadow=true;g.add(o);return o};
+ if(kind==='pino'){const H=(3.2+R()*1.2)*s;cyl(0.06*s,0.16*s,H,bm(0x5a4030),0,H/2,0);const n=6;for(let i=0;i<n;i++){const t=i/n,r=(1.25-t*1.0)*s,y=H*0.28+t*H*0.72,c=new THREE.Mesh(new THREE.ConeGeometry(r,r*1.25,9),lm([0x2c5a33,0x335f36,0x2a5230][i%3]));c.position.set((R()-0.5)*0.08*s,y,(R()-0.5)*0.08*s);c.rotation.y=R()*3;c.castShadow=!gh;g.add(c)}return g}
+ if(kind==='alamo'){const H=(4+R()*1.5)*s;cyl(0.06*s,0.14*s,H*0.5,bm(0x8d8478),0,H*0.25,0);for(let i=0;i<6;i++){const t=i/5;blob((0.62-Math.abs(t-0.4)*0.5)*s,(R()-0.5)*0.25*s,H*(0.38+t*0.58),(R()-0.5)*0.25*s,LG[(R()*5)|0],1.5)}return g}
+ const birch=kind==='abedul',th=(birch?2.0:1.6+R()*0.4)*s,cr=(birch?0.9:1.15+R()*0.35)*s,cy=th+cr*0.75;
+ cyl(0.09*s,0.17*s,th,bm(birch?0xe6e1d6:0x5b4330),0,th/2,0);
+ for(let i=0;i<3;i++){const a=i*2.1+R(),L=cr*0.9,ang=0.6+R()*0.25,bx=Math.cos(a)*Math.sin(ang)*L/2,bz=Math.sin(a)*Math.sin(ang)*L/2;const b=new THREE.Mesh(new THREE.CylinderGeometry(0.035*s,0.07*s,L,6),bm(birch?0xd8d2c6:0x5b4330));b.position.set(bx,th*0.85+Math.cos(ang)*L/2,bz);b.lookAt(bx*3,th*0.85+Math.cos(ang)*L*1.5,bz*3);b.rotateX(Math.PI/2);b.castShadow=!gh;g.add(b)}
+ const autumn=!birch&&R()<0.12,pal=autumn?AU:birch?[0x6f9a45,0x7fa84c,0x5e8c3e]:LG;
+ blob(cr*0.75,0,cy,0,pal[0]);const nb=8;for(let i=0;i<nb;i++){const a=i/nb*Math.PI*2+R()*0.5,el=(R()-0.3)*0.9,d=cr*(0.55+R()*0.25);blob(cr*(0.38+R()*0.2),Math.cos(a)*Math.cos(el)*d,cy+Math.sin(el)*d*0.8,Math.sin(a)*Math.cos(el)*d,pal[(R()*pal.length)|0])}
+ blob(cr*0.45,(R()-0.5)*0.3*s,cy+cr*0.6,(R()-0.5)*0.3*s,pal[(R()*pal.length)|0]);return g}
 function fModel(k,gh,fc){const g=new THREE.Group(),F=FURN[k];if(!F)return g;
  const B=(w,h,d,x,y,z,c)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),gh?GM:c==='gl'?GLM:mc(c));m.position.set(x,y,z);m.castShadow=!gh;m.receiveShadow=true;g.add(m);return m},
   C=(rt,rb,h,x,y,z,c,sg=16)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,sg),gh?GM:mc(c));m.position.set(x,y,z);m.castShadow=!gh;g.add(m);return m};
@@ -1466,7 +1508,7 @@ function fModel(k,gh,fc){const g=new THREE.Group(),F=FURN[k];if(!F)return g;
   case 'huerta':B(2,0.3,1,0,0.15,0,0x8a6a4a);B(1.9,0.05,0.9,0,0.3,0,0x4a3424);for(let i=0;i<10;i++){const s=new THREE.Mesh(new THREE.IcosahedronGeometry(0.11,0),gh?GM:mc(i%3?0x5aa04a:0x8cc63f));s.position.set(-0.8+(i%5)*0.4,0.4,i<5?-0.22:0.22);g.add(s)}break;
   case 'sendero':for(let i=0;i<4;i++){const s=C(0.25,0.25,0.04,(i%2?0.08:-0.08),0.02,-0.75+i*0.5,0xb9b3a8,10);s.scale.set(1.2,1,0.9)}break;
   case 'palmera':{for(let i=0;i<6;i++)C(0.1-i*0.008,0.12-i*0.008,0.6,Math.sin(i*0.3)*0.06*i,0.3+i*0.58,0,0x8a6a45,8);const L=gh?GM:mat(0x4f8a3f,{side:THREE.DoubleSide});for(let k=0;k<7;k++){const m=new THREE.Mesh(new THREE.PlaneGeometry(1.4,0.3),L);const a=k/7*Math.PI*2;m.position.set(Math.cos(a)*0.65+0.3,3.5,Math.sin(a)*0.65);m.rotation.set(-Math.PI/2+0.4,0,-a);m.rotation.order='YXZ';m.rotation.y=-a;m.rotation.x=0.45;g.add(m)}break}
-  case 'pino':{C(0.08,0.12,0.8,0,0.4,0,0x6b4a2b);const L=gh?GM:mat(0x2f6b3a,{flatShading:true});[[0.65,1.2,0.9],[0.5,1.0,1.6],[0.32,0.8,2.2]].forEach(([r,h,y])=>{const m=new THREE.Mesh(new THREE.ConeGeometry(r,h,8),L);m.position.y=y;m.castShadow=!gh;g.add(m)});break}
+  case 'pino':{const t=mkTree('pino',0.9,(()=>{let z=5;return()=>(z=z*16807%2147483647)/2147483647})(),gh);g.add(t);break}
   case 'fuente':C(0.6,0.62,0.4,0,0.2,0,0xc9c6be,24);C(0.52,0.52,0.02,0,0.39,0,0x7fc4e0,24);C(0.08,0.1,0.6,0,0.6,0,0xc9c6be);C(0.25,0.08,0.1,0,0.92,0,0xc9c6be,16);break;
   case 'pergola':[-1.4,1.4].forEach(x=>[-1.4,1.4].forEach(z=>B(0.12,2.4,0.12,x,1.2,z,W)));[-1.4,1.4].forEach(z=>B(3.1,0.15,0.08,0,2.4,z,W));for(let x=-1.4;x<=1.41;x+=0.35)B(0.06,0.1,3.1,x,2.52,0,WL);break;
   case 'rocas':[[0,0.2,0,0.3],[0.35,0.13,0.15,0.2],[-0.35,0.12,0.1,0.18],[0.1,0.1,-0.25,0.15]].forEach(([x,y,z,r])=>{const s=new THREE.Mesh(new THREE.DodecahedronGeometry(r),gh?GM:mc(0x8d8a82));s.position.set(x,y,z);s.castShadow=!gh;g.add(s)});break;
@@ -1477,7 +1519,7 @@ function fModel(k,gh,fc){const g=new THREE.Group(),F=FURN[k];if(!F)return g;
   case 'banca':B(1.5,0.05,0.45,0,0.45,0,W);B(1.5,0.4,0.05,0,0.7,-0.2,W);[-0.65,0.65].forEach(x=>B(0.06,0.45,0.45,x,0.22,0,DK));break;
   case 'piscina':B(w,0.12,d,0,0.06,0,0xe9e7e1);B(w-0.3,0.02,d-0.3,0,0.12,0,0x3fa6d6);B(w-0.3,0.01,d-0.3,0,0.125,0,'gl');B(0.5,0.02,0.4,w/2-0.5,0.13,d/2-0.35,ST);break;
   case 'auto':{const bc=0x8a99a8;B(1.75,0.55,4.2,0,0.55,0,bc);B(1.55,0.5,2.1,0,1.05,-0.15,bc);B(1.5,0.42,2.0,0,1.06,-0.15,'gl');[-1,1].forEach(sx=>[-1.35,1.35].forEach(z=>{const m=C(0.32,0.32,0.22,sx*0.8,0.32,z,0x222222,16);m.rotation.z=Math.PI/2}));B(1.4,0.12,0.04,0,0.7,2.11,0xfff2c0);break}
-  case 'arbol':{C(0.12,0.18,2.2,0,1.1,0,0x6b4a2b);const L=gh?GM:mat(0x4f8a3f,{flatShading:true});[[0,2.9,0,1.1],[0.5,2.5,0.3,0.8],[-0.45,2.55,-0.25,0.85],[0.1,3.5,-0.1,0.75]].forEach(([x,y,z,r])=>{const s=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),L);s.position.set(x,y,z);s.castShadow=!gh;g.add(s)});break}
+  case 'arbol':{const t=mkTree('frondoso',1,(()=>{let z=11;return()=>(z=z*16807%2147483647)/2147483647})(),gh);g.add(t);break}
   case 'arbusto':{const L=gh?GM:mat(0x5d9447,{flatShading:true});[[0,0.35,0,0.42],[0.2,0.3,0.1,0.3],[-0.2,0.32,-0.08,0.3]].forEach(([x,y,z,r])=>{const s=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),L);s.position.set(x,y,z);s.castShadow=!gh;g.add(s)});break}
   case 'maceta':C(0.28,0.2,0.4,0,0.2,0,0xc97b5b);C(0.26,0.26,0.03,0,0.4,0,0x5a3e2b);[[0,0.55,0,0xe0425a],[0.12,0.5,0.08,0xf2c230],[-0.1,0.52,-0.06,0xe86fa5],[0.05,0.48,-0.12,0xffffff]].forEach(([x,y,z,c])=>{C(0.008,0.008,0.15,x,y-0.07,z,0x3f7a3a);const s=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,6),gh?GM:mc(c));s.position.set(x,y,z);g.add(s)});break;
   case 'estanque':C(0.55,0.55,1.4,0,1.5,0,0x2f3236,20);[-1,1].forEach(sx=>[-1,1].forEach(sz=>B(0.08,0.8,0.08,sx*0.45,0.4,sz*0.45,0x7a7d80)));B(1.1,0.06,1.1,0,0.8,0,0x7a7d80);break;
@@ -1531,7 +1573,8 @@ function init3D(){
    if(d.t==='furn'){pk.furn=S.furn.find(f=>f.id===d.id);break}
    if(d.t==='seg'||d.t==='op'){if(d.t==='op')pk.op=G.ops.find(q=>q.id===d.id);pk.wall=nearWall(hp,0.3);pk.onWall=true;
     const n=h.face.normal.clone().transformDirection(h.object.matrixWorld);if(Math.abs(n.y)<0.5){const r=roomAt({x:hp.x+n.x*0.15,y:hp.y+n.z*0.15});if(r)pk.room=r;else pk.facade=true}break}
-   if(d.t==='room'){pk.room=G.rooms[d.id];break}}
+   if(d.t==='room'){pk.room=G.rooms[d.id];break}
+   if(d.t==='roof'){pk.roof=true;break}if(d.t==='path'){pk.path=(S.paths||[]).find(q=>q.id===d.id);break}if(d.t==='vered'){pk.vered=true;break}}
   pk.q=pk.onWall?pk.hp:pk.p;if(!pk.p)pk.p=pk.hp;return pk};
  const wallPt=w=>{const n=new THREE.Vector3(-(w.y2-w.y1),0,w.x2-w.x1).normalize(),pl=new THREE.Plane().setFromNormalAndCoplanarPoint(n,new THREE.Vector3(w.x1,0,w.y1)),v=new THREE.Vector3();return RAY.ray.intersectPlane(pl,v)?{x:v.x,y:v.z}:null};
  const P3=new Map();let g3=null;
@@ -1582,9 +1625,7 @@ function buildEnv(cx,cz,b){
  const bw=Math.max(b.w,4),bh=Math.max(b.d,4),R0=Math.max(bw,bh)/2+5,hw=(x,z)=>effH(x+cx,z+cz);
  const far=(a0=R0+3,sp=30)=>{const a=rnd()*Math.PI*2,d=a0+rnd()*sp;return[Math.cos(a)*d,Math.sin(a)*d]};
  const LV=[0x3f7a3a,0x4f8a3f,0x5d9447,0x6a9a4c].map(c=>mat(c,{flatShading:true})),TR=mc(0x6b4a2b);
- const tree=(x,z,s=1)=>{const y=hw(x,z);const tk=new THREE.Mesh(new THREE.CylinderGeometry(0.1*s,0.18*s,2.2*s,7),TR);tk.position.set(x,y+1.1*s,z);tk.castShadow=true;envG.add(tk);
-  if(rnd()<0.4){const c=new THREE.Mesh(new THREE.ConeGeometry(1.3*s,3.4*s,8),LV[0]);c.position.set(x,y+3.3*s,z);c.castShadow=true;envG.add(c)}
-  else for(let i=0;i<4;i++){const r=(0.7+rnd()*0.5)*s,m=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),LV[1+(rnd()*3|0)]);m.position.set(x+(rnd()-0.5)*1.2*s,y+(2.4+rnd()*1.2)*s,z+(rnd()-0.5)*1.2*s);m.castShadow=true;envG.add(m)}};
+ const tree=(x,z,s=1)=>{const y=hw(x,z),r=rnd(),kind=S.ter==='cerro'?(r<0.45?'pino':r<0.85?'frondoso':'alamo'):S.ter==='rural'?(r<0.2?'alamo':r<0.3?'abedul':r<0.4?'pino':'frondoso'):(r<0.25?'abedul':'frondoso');const t=mkTree(kind,s,rnd);t.position.set(x,y,z);t.rotation.y=rnd()*6;envG.add(t)};
  const bush=(x,z,s=1)=>{const y=hw(x,z);for(let i=0;i<3;i++){const m=new THREE.Mesh(new THREE.IcosahedronGeometry((0.35+rnd()*0.25)*s,0),LV[1+(rnd()*3|0)]);m.position.set(x+(rnd()-0.5)*0.6*s,y+0.3*s,z+(rnd()-0.5)*0.6*s);m.castShadow=true;envG.add(m)}};
  const cloud=(x,y,z)=>{const cm=mat(0xffffff,{roughness:1,fog:false,transparent:true,opacity:0.92});for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(4+rnd()*4,10,8),cm);m.scale.y=0.45;m.position.set(x+(rnd()-0.5)*16,y+rnd()*2,z+(rnd()-0.5)*8);envG.add(m)}};
  if(!photo)for(let i=0;i<7;i++){const a=rnd()*Math.PI*2,d=90+rnd()*120;cloud(Math.cos(a)*d,55+rnd()*30,Math.sin(a)*d)}
@@ -1627,11 +1668,12 @@ function build3D(){if(!R)return;try{
  {const ks=Object.keys(S.conc||{});if(ks.length){const V=[],I=[];ks.forEach((k,n)=>{const[i,j]=k.split(',').map(Number),x=TG.x0+i,z=TG.z0+j;[[-0.5,-0.5],[0.5,-0.5],[0.5,0.5],[-0.5,0.5]].forEach(([a,b])=>V.push(x+a,effH(x+a,z+b)+0.03,z+b));const q=n*4;I.push(q,q+2,q+1,q,q+3,q+2)});
   const ge=new THREE.BufferGeometry();ge.setAttribute('position',new THREE.Float32BufferAttribute(V,3));ge.setIndex(I);ge.computeVertexNormals();const m=new THREE.Mesh(ge,mat(0xaeaba3,{side:THREE.DoubleSide,roughness:0.8}));m.receiveShadow=true;root.add(m)}}
  {const vm=mc(0xc4c1b9),pm=mc(0xb9b6ae),v=+S.vered||0;
-  if(v&&g.rooms.length)for(const r of footRects(g))wbox(r.w+2*v,0.42,r.d+2*v,r.x+r.w/2,g.pad-0.16,r.y+r.d/2,vm);
-  for(const q of S.paths||[]){const L=Math.hypot(q.x2-q.x1,q.y2-q.y1);if(L<0.1)continue;const ux=(q.x2-q.x1)/L,uy=(q.y2-q.y1)/L,nx=-uy*q.w/2,ny=ux*q.w/2,n=Math.max(1,Math.ceil(L/0.5)),V=[],I=[];
-   for(let i=0;i<=n;i++){const x=q.x1+ux*L*i/n,y=q.y1+uy*L*i/n;for(const sg of[-1,1]){const px=x+nx*sg,py=y+ny*sg;let h=-1e9;for(const[a,b]of[[px,py],[x,y],[px+0.4,py],[px-0.4,py],[px,py+0.4],[px,py-0.4]])h=Math.max(h,effH(a,b));V.push(px,h+0.07,py)}
+  const sm=k=>{k=PATHM[k]?k:'hormigon';return k==='hormigon'?null:k==='laja'?floorMat('piedra'):k==='deck'?floorMat('nogal'):k==='adoquin'?floorMat('terracotta'):mc(PATHM[k][1])};
+  if(v&&g.rooms.length)for(const r of footRects(g)){const b=wbox(r.w+2*v,0.42,r.d+2*v,r.x+r.w/2,g.pad-0.16,r.y+r.d/2,sm(S.veredM)||vm);b.userData={t:'vered'}}
+  for(const q of S.paths||[]){const L=Math.hypot(q.x2-q.x1,q.y2-q.y1);if(L<0.1)continue;const ux=(q.x2-q.x1)/L,uy=(q.y2-q.y1)/L,nx=-uy*q.w/2,ny=ux*q.w/2,n=Math.max(1,Math.ceil(L/0.5)),V=[],I=[],UVp=[];
+   for(let i=0;i<=n;i++){const x=q.x1+ux*L*i/n,y=q.y1+uy*L*i/n;for(const sg of[-1,1]){const px=x+nx*sg,py=y+ny*sg;let h=-1e9;for(const[a,b]of[[px,py],[x,y],[px+0.4,py],[px-0.4,py],[px,py+0.4],[px,py-0.4]])h=Math.max(h,effH(a,b));V.push(px,h+0.07,py);UVp.push(px,-py)}
     if(i<n){const k=i*2;I.push(k,k+2,k+1,k+1,k+2,k+3)}}
-   const ge=new THREE.BufferGeometry();ge.setAttribute('position',new THREE.Float32BufferAttribute(V,3));ge.setIndex(I);ge.computeVertexNormals();const m=new THREE.Mesh(ge,pm);m.receiveShadow=true;m.material.side=THREE.DoubleSide;root.add(m)}
+   const ge=new THREE.BufferGeometry();ge.setAttribute('position',new THREE.Float32BufferAttribute(V,3));ge.setIndex(I);ge.setAttribute('uv',new THREE.Float32BufferAttribute(UVp,2));ge.computeVertexNormals();const m=new THREE.Mesh(ge,sm(q.m)||pm);m.receiveShadow=true;m.material.side=THREE.DoubleSide;m.userData={t:'path',id:q.id};root.add(m)}
   const zh=y0-g.pad-0.25;if(zh>0.05&&S.ter!=='playa'){const ns=Math.ceil(zh/0.18),rs=(y0-g.pad)/ns;
    for(const o of g.ops){if(o.t!=='puerta'||!o.ext)continue;const s=o.s,L=s.len,ux=(s.x2-s.x1)/L,uy=(s.y2-s.y1)/L;let nx=-uy,ny=ux;if(roomAt({x:o.cx+nx*0.4,y:o.cy+ny*0.4})){nx=-nx;ny=-ny}
     const grp=new THREE.Group();grp.position.set(o.cx,g.pad,o.cy);grp.rotation.y=-Math.atan2(ny,nx);root.add(grp);
@@ -1649,13 +1691,13 @@ function build3D(){if(!R)return;try{
   for(const s of g.segs){const t=s.ext?0.18:0.1,ex=t/2,ms=[capM,capM,capM,capM,side(s,1),side(s,-1)],ud={t:'seg',i:s.i};
    const grp=segGroup(s.x1,b0,s.y1,Math.atan2(s.y2-s.y1,s.x2-s.x1)),full=new THREE.Group(),low=new THREE.Group();grp.add(full,low);
    const pc=(a,b,y1,y2,mt,th,par,u)=>{if(b-a<0.005||y2-y1<0.005)return;const m=wbox(b-a,y2-y1,th,(a+b)/2,(y1+y2)/2,0,mt,par);m.userData=u||ud};
-   const ops=g.ops.filter(o=>o.s===s).map(o=>({id:o.id,a:o.a,b:o.b,t:(k>0&&o.t==='puerta'&&o.ext)?'ventana':o.t,v:(k>0&&o.t==='puerta')?undefined:o.v,c:o.c,ext:o.ext})).sort((p,q)=>p.a-q.a);
+   const ops=g.ops.filter(o=>o.s===s).map(o=>({id:o.id,a:o.a,b:o.b,t:(k>0&&o.t==='puerta'&&o.ext)?'ventana':o.t,v:(k>0&&o.t==='puerta')?undefined:o.v,c:o.c,mat:(k>0&&o.t==='puerta')?undefined:o.mat,ext:o.ext})).sort((p,q)=>p.a-q.a);
    let cur=-ex;
-   for(const o of ops){if(o.a<cur)continue;const uo={t:'op',id:o.id},FR=o.c!=null?mc(o.c):FRM;pc(cur,o.a,0,H,ms,t,full);
+   for(const o of ops){if(o.a<cur)continue;const uo={t:'op',id:o.id},FR=o.c!=null?mc(o.c):(o.t!=='puerta'&&WINM[o.mat])?mat(WINM[o.mat][1],{roughness:o.mat==='madera'?0.8:0.45,metalness:o.mat.startsWith('alum')?0.3:0}):FRM;pc(cur,o.a,0,H,ms,t,full);
     const zb=(a,b,y1,y2,mt,th,z,u)=>{if(b-a<0.005||y2-y1<0.005)return;const m=wbox(b-a,y2-y1,th,(a+b)/2,(y1+y2)/2,z,mt,full);m.userData=u||uo;return m};
     const archTop=(a,b,ys,y2)=>{const r=(b-a)/2,cx=(a+b)/2,sh=new THREE.Shape();sh.moveTo(a,ys);sh.lineTo(a,y2);sh.lineTo(b,y2);sh.lineTo(b,ys);sh.absarc(cx,ys,r,0,Math.PI,false);
      const ge=new THREE.ExtrudeGeometry(sh,{depth:t,bevelEnabled:false,curveSegments:20});ge.translate(0,0,-t/2);const wm=new THREE.Mesh(ge,ms[4]);wm.castShadow=wm.receiveShadow=true;wm.userData=ud;full.add(wm)};
-    if(o.t==='puerta'){const D=doorOf(o),dh=Math.min(D.h,H-0.05),st=D.st,wm=o.c!=null?mc(o.c):o.ext?dm:di,a=o.a,b=o.b,m=(a+b)/2,w=b-a;
+    if(o.t==='puerta'){const D=doorOf(o),dh=Math.min(D.h,H-0.05),st=D.st,wm=o.c!=null?mc(o.c):DOORM[o.mat]?mat(DOORM[o.mat][1],{roughness:o.mat==='alum'||o.mat==='acero'?0.4:0.8,metalness:o.mat==='alum'||o.mat==='acero'?0.4:0}):o.ext?dm:di,a=o.a,b=o.b,m=(a+b)/2,w=b-a;
      if(st==='arco'){const r=w/2,ys=Math.max(0.3,dh-r);pc(a,b,dh,H,ms,t,full);archTop(a,b,ys,dh)}else pc(a,b,dh,H,ms,t,full);
      if(st==='hoja'||st==='calle'){zb(a,b,0,dh,wm,0.045,0);zb(b-0.13,b-0.07,0.97,1.03,FR,0.1,0);if(st==='calle')zb(a+w*0.3,b-w*0.3,1.1,1.9,GLM,0.05,0)}
      else if(st==='doble'){zb(a,m-0.006,0,dh,wm,0.045,0);zb(m+0.006,b,0,dh,wm,0.045,0);zb(m-0.09,m-0.04,0.97,1.03,FR,0.1,0);zb(m+0.04,m+0.09,0.97,1.03,FR,0.1,0)}
@@ -1689,7 +1731,7 @@ function build3D(){if(!R)return;try{
    const bx=(w,h,d,x,y,z,m,rx,rz)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);if(rx)o.rotation.x=rx;if(rz)o.rotation.z=rz;o.castShadow=true;grp.add(o);return o};
    if(md!=='cuatro'){const o=S.roofO||0,along=(r.w>=r.d)!==!!(o%2);let sp=Math.min(r.w,r.d),ln=Math.max(r.w,r.d);if(o%2)[sp,ln]=[ln,sp];const half=sp/2+0.5,sh=new THREE.Shape(),pr=roofProf(md,half);
     sh.moveTo(-half,0);sh.lineTo(half,0);for(let q=pr.length-1;q>=0;q--)sh.lineTo(pr[q][0],pr[q][1]);sh.lineTo(-half,0);
-    const ge=new THREE.ExtrudeGeometry(sh,{depth:ln+1,bevelEnabled:false,curveSegments:16});ge.translate(0,0,-(ln+1)/2);const m=new THREE.Mesh(ge,rm);m.castShadow=m.receiveShadow=true;grp.add(m);
+    const ge=new THREE.ExtrudeGeometry(sh,{depth:ln+1,bevelEnabled:false,curveSegments:16});ge.translate(0,0,-(ln+1)/2);const m=new THREE.Mesh(ge,rm);m.castShadow=m.receiveShadow=true;m.userData={t:'roof'};grp.add(m);
     if(X.can){const L=ln+1;[[-half-0.06,yAt(pr,-half)],[half+0.06,yAt(pr,half)]].forEach(([x,y])=>{if(y<0.5)bx(0.12,0.1,L,x,y-0.03,0,gm)})}
     if(ri===0&&X.sky){const x=-half*0.5,y=yAt(pr,x),ang=Math.atan2(yAt(pr,x+0.1)-yAt(pr,x-0.1),0.2);[-(ln+1)*0.3,(ln+1)*0.3].forEach(z=>bx(1.2,0.1,0.8,x,y+0.06,z,GLM,0,ang))}
     if(ri===0&&X.chim){const x=half*0.38,top=Math.max(...pr.map(p=>p[1]));bx(0.6,top+0.9,0.6,x,(top+0.9)/2,(ln+1)*0.22,ckm);bx(0.75,0.08,0.75,x,top+0.94,(ln+1)*0.22,mc(0x55585c))}
@@ -1697,13 +1739,13 @@ function build3D(){if(!R)return;try{
    else{const sp=Math.min(r.w,r.d)+1,ln=Math.max(r.w,r.d)+1,hs=sp/2,hl=ln/2,rise=hs*roofPt(),rl=Math.max(0,hl-hs),T=[];
     const tri=(a,b,c)=>T.push(...a,...b,...c),A=[-hl,0,-hs],B2=[hl,0,-hs],C2=[hl,0,hs],D2=[-hl,0,hs],E=[-rl,rise,0],F=[rl,rise,0];
     tri(A,E,F);tri(A,F,B2);tri(C2,F,E);tri(C2,E,D2);tri(D2,E,A);tri(B2,F,C2);tri(A,B2,C2);tri(A,C2,D2);
-    const ge=new THREE.BufferGeometry();ge.setAttribute('position',new THREE.Float32BufferAttribute(T,3));ge.computeVertexNormals();const m=new THREE.Mesh(ge,rm);m.castShadow=m.receiveShadow=true;grp.add(m);
+    const ge=new THREE.BufferGeometry();ge.setAttribute('position',new THREE.Float32BufferAttribute(T,3));ge.computeVertexNormals();const m=new THREE.Mesh(ge,rm);m.castShadow=m.receiveShadow=true;m.userData={t:'roof'};grp.add(m);
     if(X.can){bx(ln+0.12,0.1,0.12,0,-0.03,-hs-0.06,gm);bx(ln+0.12,0.1,0.12,0,-0.03,hs+0.06,gm);bx(0.12,0.1,sp,-hl-0.06,-0.03,0,gm);bx(0.12,0.1,sp,hl+0.06,-0.03,0,gm)}
     if(ri===0&&X.sky){const z=-hs*0.5;[-hl*0.3,hl*0.3].forEach(x=>bx(0.8,0.07,1.2,x,rise*0.5+0.04,z,GLM,Math.atan(roofPt())))}
     if(ri===0&&X.chim){const x=hl*0.3,z=hs*0.35;bx(0.6,rise+0.9,0.6,x,(rise+0.9)/2,z,ckm);bx(0.75,0.08,0.75,x,rise+0.94,z,mc(0x55585c))}
     if(r.d>r.w)grp.rotation.y=Math.PI/2}
    grp.position.set(r.x+r.w/2,rb,r.y+r.d/2);root.add(grp)})}
-  else for(const f of g.rooms)mesh(polyGeo(f.pts,0.22),rm,rb)}
+  else for(const f of g.rooms)mesh(polyGeo(f.pts,0.22),rm,rb).userData={t:'roof'}}
  for(const f of S.furn){const m=fModel(f.k,false,f.c);m.position.set(f.x,fY(f.x,f.y,y0),f.y);m.rotation.y=-f.r*Math.PI/180;m.userData={t:'furn',id:f.id};root.add(m);
   if(sel&&sel.k==='furn'&&sel.id===f.id){m.updateMatrixWorld(true);root.add(new THREE.BoxHelper(m,0xe2774f))}}
  if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(w){const L=Math.hypot(w.x2-w.x1,w.y2-w.y1),h=S.wv==='bajos'?LH+0.05:H+0.04;wbox(L,h,0.26,L/2,h/2,0,HL,segGroup(w.x1,y0,w.y1,Math.atan2(w.y2-w.y1,w.x2-w.x1)))}}
