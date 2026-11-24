@@ -519,7 +519,7 @@ const DOORM={madera:['Madera',0x7a4f2c,1],mdf:['MDF pintado',0xe2d6c0,0.7],pvc:[
 const WINM={alum:['Aluminio',0x34383c,1],alumb:['Aluminio blanco',0xe8e8e4,1.05],pvc:['PVC',0xf4f4f0,1.35],madera:['Madera',0x8b5a33,1.5]};
 const PATHM={hormigon:['Hormigón',0xb9b6ae],adoquin:['Adoquín',0x9a8478],gravilla:['Gravilla o maicillo',0xcdbf9e],laja:['Piedra laja',0x8f8a80],deck:['Deck de madera',0x9b6d45],pastob:['Pasto con bloques',0x7fa85a]};
 const FURNM=[['Original',null],['Madera clara',0xd2b48c],['Madera',0x9b7650],['Nogal',0x5a3c28],['Melamina blanca',0xf2f0ea],['Metal negro',0x2a2b2d],['Tela gris',0x8f9093],['Tela azul',0x3f6fa8],['Tela verde',0x6f9a8a],['Cuero café',0x6e4b32]];
-const DEF={region:'rm',baseV:0,veredM:'hormigon',conc:{},snd:1,prices:{},ftile:{},vered:0,zoc:0,paths:[],terR:0,terX:0,terZ:0,roofF:1,roofX:{},roofP:20,roofO:0,roofC:null,ter:'ciudad',pisos:1,H:2.4,muro:'ladrillo',techo:'zinc',roofMode:'dos',merma:10,env:true,snap:0.25,fach:'visto',wv:'corte',padOff:0};
+const DEF={bank:0,region:'rm',baseV:0,veredM:'hormigon',conc:{},snd:1,prices:{},ftile:{},vered:0,zoc:0,paths:[],terR:0,terX:0,terZ:0,roofF:1,roofX:{},roofP:20,roofO:0,roofC:null,ter:'ciudad',pisos:1,H:2.4,muro:'ladrillo',techo:'zinc',roofMode:'dos',merma:10,env:true,snap:0.25,fach:'visto',wv:'corte',padOff:0};
 let S,G,VB,tool='cuarto',sel=null,act=null,prev=null,ghost=null,undo=[],photo=null,under=null,DL=null,M=null;
 let cal=null,UT=null;
 let doorK='simple',winK='estandar',cat='Dormitorio',fk='cama2',frot=0,paint='salvia',floorK='madera',tmode='subir',brush=1.5,pathW=1.2,fmode='cuarto',fsize=0.5;
@@ -528,7 +528,7 @@ const fix=o=>{o.furn=Array.isArray(o.furn)?o.furn:[];o.dig=o.dig&&typeof o.dig==
 try{const j=JSON.parse(localStorage.getItem('casas-v2'));if(j&&Array.isArray(j.walls))S=fix(Object.assign({},DEF,j))}catch(e){}
 if(!S)S=fix(Object.assign({},DEF,TPL.dos()));
 const save=()=>{try{localStorage.setItem('casas-v2',JSON.stringify(S))}catch(e){}};
-const snap=()=>{undo.push(JSON.stringify({conc:S.conc,ftile:S.ftile,paths:S.paths,vered:S.vered,zoc:S.zoc,baseV:S.baseV,walls:S.walls,ops:S.ops,labels:S.labels,furn:S.furn,fach:S.fach,dig:S.dig,padOff:S.padOff,terR:S.terR,terX:S.terX,terZ:S.terZ}));if(undo.length>60)undo.shift();$('#bUndo').disabled=false};
+const snap=()=>{undo.push(JSON.stringify({conc:S.conc,ftile:S.ftile,paths:S.paths,vered:S.vered,zoc:S.zoc,baseV:S.baseV,bank:S.bank,walls:S.walls,ops:S.ops,labels:S.labels,furn:S.furn,fach:S.fach,dig:S.dig,padOff:S.padOff,terR:S.terR,terX:S.terX,terZ:S.terZ}));if(undo.length>60)undo.shift();$('#bUndo').disabled=false};
 const toast=(m,ms)=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.k);toast.k=setTimeout(()=>t.classList.remove('on'),ms||2400)};
 const overlaps=()=>null;
 
@@ -779,16 +779,33 @@ function price0(n){if(OPP[n])return OPP[n];if(PINC.test(n))return null;const w=n
 /* ---------- tierra: sacar del lado alto, equilibrar, nivelar con hormigón ---------- */
 function upSide(g){const rb=g.rb,M=0.6+(+S.vered||0),cx=rb.x+rb.w/2,cz=rb.y+rb.d/2,sd=[[0,-1,'atrás'],[1,0,'a la derecha'],[0,1,'adelante'],[-1,0,'a la izquierda']];let best=null;
  for(const[dx,dz,nm]of sd){let s=0,n=0;for(let t=-0.4;t<=0.4;t+=0.2){const px=cx+dx*(rb.w/2+M+3)+dz*rb.w*t,pz=cz+dz*(rb.d/2+M+3)+dx*rb.d*t;s+=rawH(px,pz);n++}s/=n;if(!best||s>best.h)best={dx,dz,nm,h:s}}return best}
-function doBorrow(){const g=G;if(!g.rb){toast('Primero cierra una habitación');return}terrain(g);const need=g.fill*1.15-g.cut;if(need<0.05){toast('No falta tierra: el corte alcanza para el relleno');return}
- const rb=g.rb,M=0.6+(+S.vered||0),cx=rb.x+rb.w/2,cz=rb.y+rb.d/2,u=upSide(g);let V=null,L=0,got=0;
- for(const D of[6,9,12,16]){V=[];for(let j=1;j<TG.n;j++)for(let i=1;i<TG.n;i++){const x=TG.x0+i,z=TG.z0+j,pd=padDist(x,z,rb);if(pd<2.3||pd>D)continue;
-   const out=u.dx?(x-cx)*u.dx-(rb.w/2+M):(z-cz)*u.dz-(rb.d/2+M);if(out<1.5)continue;if(typeof pathAt==='function'&&pathAt({x,y:z}))continue;V.push({k:i+','+j,r:rawH(x,z)})}
-  if(!V.length)continue;const vol=l=>V.reduce((t,v)=>t+Math.max(0,v.r-l),0),lo=g.pad-1.2;let hi=Math.max(...V.map(v=>v.r)),l0=lo;
-  if(vol(lo)<need&&D<16)continue;if(vol(lo)<need){L=lo;got=vol(lo);break}
-  for(let it=0;it<40;it++){const m=(l0+hi)/2;if(vol(m)>need)l0=m;else hi=m}L=l0;got=vol(L);break}
- if(!V||!V.length||got<0.05){toast('No encontré dónde sacar tierra cerca de la casa');return}
- snap();let n=0;for(const v of V){const c=v.r-L;if(c>0.005){S.dig[v.k]=Math.round(((S.dig[v.k]||0)-c)*100)/100;n++}}
- commit(false);sfx('dig');const ok=got>=need-0.05;toast(`${ok?'Listo':'Saqué lo que pude'}: ${nf(got,1)} m³ de tierra sacada del lado alto (${u.nm} de la casa) (${n} m² rebajados${L<g.pad?', queda más bajo que la casa':''}). ${ok?'Ya alcanza para rellenar.':'Aún falta: prueba Equilibrar o Muro de hormigón.'} Puedes deshacer con ↶`,6000)}
+/* celdas del terreno a un lado de la casa (fuera de la plataforma) */
+function sideCells(g,u,D){const rb=g.rb,M=0.6+(+S.vered||0),cx=rb.x+rb.w/2,cz=rb.y+rb.d/2,V=[];
+ for(let j=1;j<TG.n;j++)for(let i=1;i<TG.n;i++){const x=TG.x0+i,z=TG.z0+j,pd=padDist(x,z,rb);if(pd<2.3||pd>D)continue;
+  const out=u.dx?(x-cx)*u.dx-(rb.w/2+M):(z-cz)*u.dz-(rb.d/2+M);if(out<1.2)continue;if(typeof pathAt==='function'&&pathAt({x,y:z}))continue;V.push({k:i+','+j,x,z,pd,r:rawH(x,z)})}return V}
+/* forma de talud: sube (corte) o baja (relleno) 1 m cada 2 m al alejarse de la casa */
+const TAL=0.5,cutA=(v,L)=>Math.max(0,v.r-(L+TAL*(v.pd-2.3))),filA=(v,L)=>Math.max(0,(L-TAL*(v.pd-2.3))-v.r);
+function planCut(g,u,need){let best=null;for(const D of[7,10,13,17]){const V=sideCells(g,u,D);if(!V.length)continue;const vol=L=>V.reduce((t,v)=>t+cutA(v,L),0);let lo=g.pad-1.2,hi=Math.max(...V.map(v=>v.r))+1;
+  if(vol(lo)<need){best={V,L:lo,got:vol(lo)};if(D<17)continue;break}for(let it=0;it<40;it++){const m=(lo+hi)/2;if(vol(m)>need)lo=m;else hi=m}best={V,L:lo,got:vol(lo)};break}return best}
+function planFill(g,u,want){const V=sideCells(g,u,8);if(!V.length)return null;const vol=L=>V.reduce((t,v)=>t+filA(v,L),0);let lo=Math.min(...V.map(v=>v.r))-1,hi=g.pad-0.05;
+ if(vol(hi)<=want)return{V,L:hi,got:vol(hi)};for(let it=0;it<40;it++){const m=(lo+hi)/2;if(vol(m)<want)lo=m;else hi=m}return{V,L:lo,got:vol(lo)}}
+function applyPlan(p,sg){let n=0,sx=0,sz=0,t=0;for(const v of p.V){const c=sg<0?cutA(v,p.L):filA(v,p.L);if(c>0.005){S.dig[v.k]=Math.round(((S.dig[v.k]||0)+sg*c)*100)/100;n++;sx+=v.x*c;sz+=v.z*c;t+=c}}return{n,x:t?sx/t:0,z:t?sz/t:0}}
+let moveFx=null;
+function showMove(a,b,vol){moveFx={x1:a.x,z1:a.z,x2:b.x,z2:b.z,v:vol,t:Date.now()};O.tx=(a.x+b.x)/2;O.tz=(a.z+b.z)/2;O.ty=Y0();O.r=Math.max(14,Math.hypot(b.x-a.x,b.z-a.z)*1.6+8);camUp();drawFx();setTimeout(()=>{if(moveFx&&Date.now()-moveFx.t>=8900){moveFx=null;drawFx()}},9000)}
+function lowSide(g){const rb=g.rb,M=0.6+(+S.vered||0),cx=rb.x+rb.w/2,cz=rb.y+rb.d/2;let lo=null;for(const[dx,dz,nm]of[[0,-1,'atrás'],[1,0,'a la derecha'],[0,1,'adelante'],[-1,0,'a la izquierda']]){let s=0,n=0;for(let t=-0.4;t<=0.4;t+=0.2){s+=rawH(cx+dx*(rb.w/2+M+3)+dz*rb.w*t,cz+dz*(rb.d/2+M+3)+dx*rb.d*t);n++}s/=n;if(!lo||s<lo.h)lo={dx,dz,nm,h:s}}return lo}
+function doBorrow(){const g=G;if(!g.rb){toast('Primero cierra una habitación');return}terrain(g);const need=g.fill*1.15-g.cut;if(need<0.05){toast('No falta tierra: el corte alcanza para el relleno. Si quieres, usa "Llevar tierra al lado bajo"',4500);return}
+ const u=upSide(g),p=planCut(g,u,need);if(!p||p.got<0.05){toast('No encontré dónde sacar tierra cerca de la casa');return}
+ snap();const r=applyPlan(p,-1);commit(false);sfx('dig');const rb=g.rb,ok=p.got>=need-0.05;
+ showMove(r,{x:rb.x+rb.w/2,z:rb.y+rb.d/2},p.got);
+ toast(`${ok?'Listo':'Saqué lo que pude'}: ${nf(p.got,1)} m³ sacados del lado alto (${u.nm} de la casa, ${r.n} m² en talud) y llevados bajo la casa. ${ok?'Ya alcanza para rellenar.':'Aún falta: prueba Equilibrar o Muro de hormigón.'} Puedes deshacer con ↶`,6500)}
+/* sacar del lado alto y rellenar el lado bajo de afuera para dejarlo más plano */
+function doLowFill(){const g=G;if(!g.rb){toast('Primero cierra una habitación');return}terrain(g);const u=upSide(g),lw=lowSide(g);if(u.h-lw.h<0.3){toast('El terreno es casi plano: no hay un lado bajo que rellenar');return}
+ const need0=Math.max(0,g.fill*1.15-g.cut),sob=Math.max(0,g.cut-g.fill*1.15),cap=planCut(g,u,1e6),maxB=(cap?cap.got:0)+sob,pf=planFill(g,lw,1e6);if(!pf||pf.got<0.2){toast('El lado bajo ya está a la altura de la casa');return}
+ const want=Math.max(0,Math.min(pf.got,(maxB-need0)/1.15));if(want<0.2){toast('No hay tierra suficiente en el lado alto para rellenar el lado bajo');return}
+ const pl=planFill(g,lw,want);snap();const rf=applyPlan(pl,1);terrain(g);const need=g.fill*1.15-g.cut;let rc=null,cut=0;
+ if(need>0.05){const pc=planCut(g,u,need);if(pc){rc=applyPlan(pc,-1);cut=pc.got}}commit(false);sfx('dig');
+ const src=rc&&rc.n?rc:{x:g.rb.x+g.rb.w/2,z:g.rb.y+g.rb.d/2};showMove(src,rf,pl.got);
+ toast(`🚜 ${nf(pl.got,1)} m³ de tierra puestos en el lado bajo (${lw.nm} de la casa)${cut?`, sacados del lado alto (${u.nm})`:' con la tierra que sobraba del corte'}. El lado bajo queda en talud hasta la altura de la casa. Puedes deshacer con ↶`,7000)}
 function doBal(){const g=G;if(!g.rb){toast('Primero cierra una habitación');return}const p0=+S.padOff||0,f=o=>{S.padOff=o;terrain(g);return g.cut-g.fill*1.15};let lo=-3,hi=3;
  if(f(lo)<0||f(hi)>0){S.padOff=p0;terrain(g);toast('No se puede equilibrar solo moviendo la altura de la casa');return}
  for(let i=0;i<30;i++){const m=(lo+hi)/2;if(f(m)>0)lo=m;else hi=m}const nv=Math.round(lo*20)/20;S.padOff=p0;terrain(g);if(Math.abs(nv-p0)<0.01){toast('Ya está equilibrado');return}
@@ -800,7 +817,7 @@ function useLoc(){const ok=(la,lo)=>{const r=regOf(la,lo);if(!r){toast('Tu ubica
  if(!navigator.geolocation){bad();return}try{navigator.geolocation.getCurrentPosition(p=>ok(p.coords.latitude,p.coords.longitude),e=>bad(e&&e.code===1?'No hay permiso de ubicación aquí. Elige tu región en la lista':null),{timeout:15000,maximumAge:3600000})}catch(e){bad()}}
 function renderMat(){
  M=calc();
- {const di=dupInfo(),n=di.dup.length+di.part.length,ts=M&&M._sum;$('#warn').innerHTML=(ts&&ts.falta>0.3?`<div class="dupw" style="background:#fdf1dc;color:#6b4a10">⛰ Falta ≈ <b>${nf(ts.falta,1)} m³ de tierra</b> para rellenar bajo la casa. Puedo sacarla del lado más alto del terreno (junto al muro de contención) o cambiar la altura de la casa para que el corte alcance. <button class="b" id="bBorrow">Sacar tierra del lado alto</button> <button class="b" id="bBal">Equilibrar corte y relleno</button> <button class="b" id="bBV">Nivelar con hormigón</button></div>`:ts&&ts.sobra>2?`<div class="dupw" style="background:#e7f1e3;color:#2d5a22">⛰ Sobran ≈ <b>${nf(ts.sobra,1)} m³ de tierra</b> del corte. Si subes un poco la casa la puedes usar de relleno. <button class="b" id="bBal">Equilibrar corte y relleno</button></div>`:'')+(n?`<div class="dupw">⚠ Hay <b>${n} muros repetidos</b> (${fm(di.ovL)} m puestos encima de otros). La lista no los cuenta dos veces, pero si se construyeran sobraría ≈ ${dupExtra(di)}. <button class="b" data-act="wdup" id="bDupW">Ver y borrar</button></div>`:'')}
+ {const di=dupInfo(),n=di.dup.length+di.part.length,ts=M&&M._sum;$('#warn').innerHTML=(ts&&ts.falta>0.3?`<div class="dupw" style="background:#fdf1dc;color:#6b4a10">⛰ Falta ≈ <b>${nf(ts.falta,1)} m³ de tierra</b> para rellenar bajo la casa. Puedo sacarla del lado más alto del terreno (junto al muro de contención) o cambiar la altura de la casa para que el corte alcance. <button class="b" id="bBorrow">Sacar tierra del lado alto</button> <button class="b" id="bBal">Equilibrar corte y relleno</button> <button class="b" id="bLow">Llevar tierra al lado bajo</button> <button class="b" id="bBV">Nivelar con hormigón</button></div>`:ts&&ts.sobra>2?`<div class="dupw" style="background:#e7f1e3;color:#2d5a22">⛰ Sobran ≈ <b>${nf(ts.sobra,1)} m³ de tierra</b> del corte. Si subes un poco la casa la puedes usar de relleno. <button class="b" id="bBal">Equilibrar corte y relleno</button></div>`:'')+(n?`<div class="dupw">⚠ Hay <b>${n} muros repetidos</b> (${fm(di.ovL)} m puestos encima de otros). La lista no los cuenta dos veces, pero si se construyeran sobraría ≈ ${dupExtra(di)}. <button class="b" data-act="wdup" id="bDupW">Ver y borrar</button></div>`:'')}
  if(!M){$('#tbCem').textContent='0';$('#tbCost').textContent='$0';$('#sum').innerHTML='';$('#mlist').innerHTML='<p class="muted">Cierra al menos una habitación con muros para calcular los materiales.</p>';return}
  const s=M._sum;$('#tbCem').textContent=s.cem;
  $('#sum').innerHTML=[[nf(s.A,1)+' m²','Superficie construida'],[nf(s.wl,1)+' m','Muros por piso'],[nf(s.rA,1)+' m²','Techo'],[s.cem,'Sacos de cemento'],['<span id="costS"></span>','Costo estimado']].concat(s.tierra>0.05?[[nf(s.tierra,1)+' m³','Tierra movida (corte + relleno)']]:[]).map(([a,b])=>`<div><b>${a}</b><span>${b}</span></div>`).join('');
@@ -811,7 +828,7 @@ function renderMat(){
 function updTot(){let t=0;$$('#mlist .pin').forEach(i=>{const v=+i.value.replace(/\D/g,'')||0;t+=v*(+i.dataset.q)});const e=$('#ctot');if(e)e.textContent='$'+Math.round(t).toLocaleString('es-CL');const c=$('#costS');if(c)c.textContent='$'+Math.round(t/1000).toLocaleString('es-CL')+' mil';const tc=$('#tbCost');if(tc)tc.textContent=t>=1e6?'$'+(t/1e6).toLocaleString('es-CL',{maximumFractionDigits:1})+' M':'$'+Math.round(t/1000).toLocaleString('es-CL')+' mil'}
 $('#mlist').addEventListener('input',e=>{const i=e.target.closest('.pin');if(!i)return;const v=+i.value.replace(/\D/g,'')||0;S.prices=Object.assign({},S.prices||{});S.prices[i.dataset.pn]=v;save();const st=i.closest('tr').querySelector('.st');if(st)st.textContent=v?'$'+Math.round(v*(+i.dataset.q)).toLocaleString('es-CL'):'';updTot()});
 $('#mlist').addEventListener('change',e=>{const i=e.target.closest('.pin');if(i){const v=+i.value.replace(/\D/g,'')||0;i.value=v?v.toLocaleString('es-CL'):''}});
-$('#warn').addEventListener('click',e=>{const id=e.target.id;if(id==='bBorrow'||id==='bBal'||id==='bBV'){$('#sheet').classList.add('hide');setTool('tierra');id==='bBorrow'?doBorrow():id==='bBal'?doBal():setBaseV(1);return}if(e.target.id==='bDupW'){$('#sheet').classList.add('hide');const di=dupInfo(),ids=di.dup.concat(di.part);setTool('elegir');multiW=true;sel={k:'walls',ids,dup:1};refreshSel()}});
+$('#warn').addEventListener('click',e=>{const id=e.target.id;if(id==='bBorrow'||id==='bBal'||id==='bBV'||id==='bLow'){$('#sheet').classList.add('hide');setTool('tierra');id==='bBorrow'?doBorrow():id==='bBal'?doBal():id==='bLow'?doLowFill():setBaseV(1);return}if(e.target.id==='bDupW'){$('#sheet').classList.add('hide');const di=dupInfo(),ids=di.dup.concat(di.part);setTool('elegir');multiW=true;sel={k:'walls',ids,dup:1};refreshSel()}});
 $('#mlist').addEventListener('change',e=>{if(e.target.id==='selReg'){S.region=e.target.value;save();renderMat();toast(`Precios de ${REG[S.region][0]} (aproximado)`)}});
 $('#mlist').addEventListener('click',e=>{if(e.target.id==='bLoc')useLoc();if(e.target.id==='bPr0'){S.prices={};save();renderMat();toast('Precios originales')}});
 const matText=()=>!M?'':Object.keys(M).filter(k=>k[0]!=='_').map(k=>k.toUpperCase()+'\n'+M[k].map(r=>`- ${r[0]}: ${nf(r[1],1)} ${r[2]}`).join('\n')).join('\n\n');
@@ -930,8 +947,9 @@ function grabF(f,p){snap();sel={k:'furn',id:f.id};act={k:'mf',id:f.id,dx:f.x-p.x
 function brushAt(p,a){const R=brush,i0=clamp(Math.floor(p.x-TG.x0-R),0,TG.n),i1=clamp(Math.ceil(p.x-TG.x0+R),0,TG.n),j0=clamp(Math.floor(p.y-TG.z0-R),0,TG.n),j1=clamp(Math.ceil(p.y-TG.z0+R),0,TG.n);
  for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++){const x=TG.x0+i,z=TG.z0+j,d=Math.hypot(x-p.x,z-p.y);if(d>R)continue;const w=1-(d/R)**2,k=i+','+j;let v=S.dig[k]||0;
   if(tmode==='cemento'){if(w<0.25)continue;S.conc=S.conc||{};const hole=Math.max(0,-v);S.conc[k]=Math.round(Math.max(S.conc[k]||0.1,(S.conc[k]||0)+hole)*1000)/1000;if(hole>0)delete S.dig[k];a.cem=1;continue}
-  if(tmode==='hoyo'){v-=0.3*w*w;if(S.conc&&S.conc[k])delete S.conc[k]}else if(tmode==='subir')v+=0.15*w;else if(tmode==='bajar')v-=0.15*w;else if(tmode==='aplanar')v+=(a.target-(nat(x,z)+v))*0.6*w;else v*=1-0.6*w;
+  if((tmode==='sacar'||tmode==='poner')&&G.rb&&padDist(x,z,G.rb)<0.3)continue;if(tmode==='sacar'){const c=0.15*w;v-=c;S.bank=(+S.bank||0)+c}else if(tmode==='poner'){const c=Math.min(0.15*w,+S.bank||0);if(c<=0){a.empty=1;continue}v+=c;S.bank=(+S.bank||0)-c}else if(tmode==='hoyo'){v-=0.3*w*w;if(S.conc&&S.conc[k])delete S.conc[k]}else if(tmode==='subir')v+=0.15*w;else if(tmode==='bajar')v-=0.15*w;else if(tmode==='aplanar')v+=(a.target-(nat(x,z)+v))*0.6*w;else v*=1-0.6*w;
   v=clamp(Math.round(v*1000)/1000,-6,6);if(Math.abs(v)<0.005)delete S.dig[k];else S.dig[k]=v}
+ {const e=$('#bankL');if(e)e.textContent=`🚜 Carretilla: ${nf(+S.bank||0,1)} m³`;if(a.empty&&!a.warned){a.warned=1;toast('La carretilla está vacía: primero usa “Sacar” en el lado alto')}}
  const op=G.pad;G=geo();if(G.pad!==op||a.cem)build3D();else{updTerrain();draw()}drawPlan();if(typeof sfx==='function')sfx(tmode==='cemento'?'cem':'dig')}
 function tDown(p,pk,src){if(!p)return;ghost=null;hover.k='';const t=tool;
  if(t==='muro'||t==='cuarto'){const q=snapP(pk.q||p,stol(src));act={k:t,x1:q.x,y1:q.y,src};prev={k:t,x1:q.x,y1:q.y,x2:q.x,y2:q.y};refresh();return}
@@ -1069,10 +1087,10 @@ function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';cons
  else if(tool==='tierra')h='<span class="lbl">Vereda</span>'+[[0,'Sin vereda'],[0.6,'60 cm'],[1,'1 m'],[1.5,'1,5 m']].map(([v,n])=>`<button class="${(+S.vered||0)===v?'on':''}" data-ver="${v}">${n}</button>`).join('')+
   (S.ter!=='playa'?'<span class="sep"></span><span class="lbl">Levantar casa con hormigón</span>'+[[0,'No'],[0.3,'30 cm'],[0.6,'60 cm'],[0.9,'90 cm'],[1.2,'1,2 m']].map(([v,n])=>`<button class="${(+S.zoc||0)===v?'on':''}" data-zoc="${v}">${n}</button>`).join(''):'')+
   '<span class="sep"></span><span class="lbl">Camino</span>'+`<button class="${tmode==='camino'?'on':''}" data-tm="camino">✎ Dibujar camino</button>`+[[0.8,'Angosto'],[1.2,'Normal'],[3,'Para auto']].map(([v,n])=>`<button class="${tmode==='camino'&&pathW===v?'on':''}" data-pw="${v}">${n}</button>`).join('')+((S.paths||[]).length?'<button data-act="pathdel">Quitar último camino</button>':'')+
-  '<span class="sep"></span><span class="lbl">Casa</span><button data-act="hrot">↻ Girar casa 90°</button><span class="sep"></span><span class="lbl">'+(S.ter==='cerro'?'Cerro':'Terreno')+'</span><button data-act="tr-">↺ Girar</button><button data-act="tr+">↻ Girar</button>'+(S.ter==='cerro'?'<button data-act="tzu">▲ Casa más arriba</button><button data-act="tzd">▼ Más abajo</button><button data-act="txl">◀ Al lado</button><button data-act="txr">▶ Al otro lado</button>':'')+((+S.terR||+S.terX||+S.terZ)?'<button data-act="t0">Lugar original</button>':'')+'<span class="sep"></span>'+[['subir','▲ Subir'],['bajar','▼ Bajar'],['hoyo','⛏ Hacer hoyo'],['cemento','🪣 Rellenar con cemento'],['aplanar','Aplanar'],['restaurar','Restaurar']].map(([k,n])=>`<button class="${tmode===k?'on':''}" data-tm="${k}">${n}</button>`).join('')+'<span class="sep"></span>'+
+  '<span class="sep"></span><span class="lbl">Casa</span><button data-act="hrot">↻ Girar casa 90°</button><span class="sep"></span><span class="lbl">'+(S.ter==='cerro'?'Cerro':'Terreno')+'</span><button data-act="tr-">↺ Girar</button><button data-act="tr+">↻ Girar</button>'+(S.ter==='cerro'?'<button data-act="tzu">▲ Casa más arriba</button><button data-act="tzd">▼ Más abajo</button><button data-act="txl">◀ Al lado</button><button data-act="txr">▶ Al otro lado</button>':'')+((+S.terR||+S.terX||+S.terZ)?'<button data-act="t0">Lugar original</button>':'')+'<span class="sep"></span>'+'<span class="lbl">Mover tierra a mano</span>'+[['sacar','⛏ Sacar'],['poner','🚜 Poner']].map(([k,n])=>`<button class="${tmode===k?'on':''}" data-tm="${k}">${n}</button>`).join('')+`<span class="lbl" id="bankL">🚜 Carretilla: ${nf(+S.bank||0,1)} m³</span><span class="sep"></span>`+[['subir','▲ Subir'],['bajar','▼ Bajar'],['hoyo','⛏ Hacer hoyo'],['cemento','🪣 Rellenar con cemento'],['aplanar','Aplanar'],['restaurar','Restaurar']].map(([k,n])=>`<button class="${tmode===k?'on':''}" data-tm="${k}">${n}</button>`).join('')+'<span class="sep"></span>'+
   [[0.8,'Pincel chico'],[1.5,'Mediano'],[3,'Grande']].map(([v,n])=>`<button class="${brush===v?'on':''}" data-br="${v}">${n}</button>`).join('')+
   (G.rb?`<span class="sep"></span><span class="lbl">Plataforma de la casa ${G.pad>=0?'+':'−'}${fm(Math.abs(G.pad))} m</span><button data-act="padup">Subir 10 cm</button><button data-act="paddn">Bajar 10 cm</button>${S.padOff?'<button data-act="pad0">Automática</button>':''}`:'')+
-  (G.rb&&S.ter!=='playa'?'<span class="sep"></span><span class="lbl">Nivelar el lado bajo con</span>'+[[0,'Relleno de tierra'],[1,'Muro de hormigón']].map(([v,n])=>`<button class="${(+S.baseV||0)===v?'on':''}" data-act="bv${v}">${n}</button>`).join(''):'')+`<span class="sep"></span><span class="lbl">Corte ${nf(G.cut,1)} m³ · Relleno ${nf(G.fill,1)} m³${G.fill*1.15-G.cut>0.3?` · falta ${nf(G.fill*1.15-G.cut,1)} m³`:''}</span>`+(G.rb&&G.fill*1.15-G.cut>0.3?'<button data-act="borrow">⛏ Sacar tierra del lado alto</button>':'')+(G.rb&&Math.abs(G.cut-G.fill*1.15)>0.5?'<button data-act="bal">⚖ Equilibrar corte y relleno</button>':'')+'<button data-act="digreset">Terreno original</button>';
+  (G.rb&&S.ter!=='playa'?'<span class="sep"></span><span class="lbl">Nivelar el lado bajo con</span>'+[[0,'Relleno de tierra'],[1,'Muro de hormigón']].map(([v,n])=>`<button class="${(+S.baseV||0)===v?'on':''}" data-act="bv${v}">${n}</button>`).join(''):'')+`<span class="sep"></span><span class="lbl">Corte ${nf(G.cut,1)} m³ · Relleno ${nf(G.fill,1)} m³${G.fill*1.15-G.cut>0.3?` · falta ${nf(G.fill*1.15-G.cut,1)} m³`:''}</span>`+(G.rb&&G.fill*1.15-G.cut>0.3?'<button data-act="borrow">⛏ Sacar tierra del lado alto</button>':'')+(G.rb&&S.ter!=='playa'&&!S.baseV?'<button data-act="lowfill">🚜 Llevar tierra al lado bajo</button>':'')+(G.rb&&Math.abs(G.cut-G.fill*1.15)>0.5?'<button data-act="bal">⚖ Equilibrar corte y relleno</button>':'')+'<button data-act="digreset">Terreno original</button>';
  else if(sel&&sel.k==='furn'){const f=S.furn.find(q=>q.id===sel.id);if(f)h=`<span class="lbl">${FURN[f.k].n}</span><button data-act="rot">↻ Girar</button><button class="danger" data-act="del">Borrar</button>`+colBtns(f,FURNM.concat(Object.values(PAINT).map(([n,c])=>[n,c])))}
  
  else if(sel&&sel.k==='walls'){const ws=S.walls.filter(w=>sel.ids.includes(w.id)),L=ws.reduce((t,w)=>t+Math.hypot(w.x2-w.x1,w.y2-w.y1),0),ms=new Set(ws.map(wMat));h=`<span class="lbl">${ws.length} muros · ${fm(L)} m</span>`+(sel.dup?`<button class="danger" data-act="wdupdel">🗑 Borrar repetidos</button><span class="lbl" style="color:var(--acc)">Sobraría ≈ ${dupExtra(dupInfo())}</span><span class="sep"></span>`:'')+selWBtns()+'<span class="sep"></span><span class="lbl">Material</span>'+Object.entries(MUROS).map(([k,[n,c]])=>sw('wmall',k,n,c,ms.size===1&&ms.has(k),1)).join('')+'<span class="sep"></span>'+'<button class="danger" data-act="wselDel">Borrar estos muros</button><button data-act="wnone">Quitar selección</button>'}
@@ -1115,7 +1133,7 @@ $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
  if(d.fs){fsize=+d.fs;renderSub();return}
  if(d.bm){bmode=d.bm;renderSub();return}
  if(d.bs){bsize=+d.bs;renderSub();return}
- if(d.tm){tmode=d.tm;renderSub();if(d.tm==='camino')toast('Arrastra sobre el terreno para dibujar el camino');return}
+ if(d.tm){tmode=d.tm;renderSub();if(d.tm==='camino')toast('Arrastra sobre el terreno para dibujar el camino');if(d.tm==='sacar')toast('Pasa el dedo por donde quieras sacar tierra (por ejemplo el lado alto). Se guarda en la carretilla',4500);if(d.tm==='poner')toast(+S.bank>0?'Pasa el dedo donde quieras poner la tierra de la carretilla':'La carretilla está vacía: primero usa “Sacar”',4500);return}
  if(d.br){brush=+d.br;renderSub();return}
  if(d.gotool){const keep=sel;setTool(d.gotool);return}
  const a=d.act;if(!a)return;
@@ -1140,9 +1158,10 @@ $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
  if(a==='rgir'){snap();S.roofO=((S.roofO||0)+1)%4;if(S.wv!=='techo')S.wv='techo';commit(false);toast('Techo girado');return}
  if(a==='padup'||a==='paddn'||a==='pad0'){snap();S.padOff=a==='pad0'?0:r2((S.padOff||0)+(a==='padup'?0.1:-0.1));commit(false);O.ty=Y0()+0.6;camUp();return}
  if(a==='borrow'){doBorrow();return}
+ if(a==='lowfill'){doLowFill();return}
  if(a==='bal'){doBal();return}
  if(a==='bv0'||a==='bv1'){setBaseV(+a[2]);return}
- if(a==='digreset'){if(!Object.keys(S.dig).length&&!S.padOff&&!Object.keys(S.conc||{}).length)return;snap();S.dig={};S.conc={};S.padOff=0;commit(false);toast('Terreno original. Puedes deshacer');return}
+ if(a==='digreset'){if(!Object.keys(S.dig).length&&!S.padOff&&!Object.keys(S.conc||{}).length)return;snap();S.dig={};S.conc={};S.padOff=0;S.bank=0;commit(false);toast('Terreno original. Puedes deshacer');return}
  if(a==='type'||a==='wd+'||a==='wd-'){const o=S.ops.find(q=>q.id===sel.id);if(!o)return;snap();if(a==='type'){o.t=o.t==='puerta'?'ventana':'puerta';o.v=o.t==='ventana'?winK:doorK}else{o.wd=r2(clamp(o.wd+(a==='wd+'?0.1:-0.1),0.4,4))}commit(true);return}
  if((a==='addp'||a==='addv')&&sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(!w)return;const L=Math.hypot(w.x2-w.x1,w.y2-w.y1);if(addOp({w,t:0.5,L},a==='addp'?'puerta':'ventana',a==='addp'?doorK:winK))commit(true)}});
 document.addEventListener('keydown',e=>{if(e.target.matches('input,select'))return;
@@ -1163,7 +1182,7 @@ function rotHouse(){if(!S.walls.length){toast('Primero dibuja la casa');return}s
 function tilePaint(p,a){const n=fsize>=1?2:1,i0=Math.floor(p.x/TS),j0=Math.floor(p.y/TS),bi=n>1?i0-(i0%2+2)%2:i0,bj=n>1?j0-(j0%2+2)%2:j0,id=bi+','+bj;if(a.last===id)return;a.last=id;let ch=0;
  for(let i=bi;i<bi+n;i++)for(let j=bj;j<bj+n;j++){const k=i+','+j,c=tileC(k);if(!G.rooms.some(f=>G.inPoly(c.cx,c.cy,f.pts)))continue;if(floorK==='quitar'){if(S.ftile[k]){delete S.ftile[k];ch=1}}else if(S.ftile[k]!==floorK){S.ftile[k]=floorK;ch=1}}
  if(ch){a.n=(a.n||0)+1;commit(false)}}
-function doUndo(){const j=undo.pop();if(!j)return;const o=JSON.parse(j);S.walls=o.walls;S.ops=o.ops;S.labels=o.labels;S.furn=o.furn||[];S.fach=o.fach||'visto';S.dig=o.dig||{};S.conc=o.conc||{};S.padOff=o.padOff||0;S.terR=o.terR||0;S.ftile=o.ftile||{};S.paths=o.paths||[];S.vered=o.vered||0;S.zoc=o.zoc||0;S.baseV=o.baseV||0;S.terX=o.terX||0;S.terZ=o.terZ||0;sel=null;$('#bUndo').disabled=!undo.length;commit(true)}
+function doUndo(){const j=undo.pop();if(!j)return;const o=JSON.parse(j);S.walls=o.walls;S.ops=o.ops;S.labels=o.labels;S.furn=o.furn||[];S.fach=o.fach||'visto';S.dig=o.dig||{};S.conc=o.conc||{};S.padOff=o.padOff||0;S.terR=o.terR||0;S.ftile=o.ftile||{};S.paths=o.paths||[];S.vered=o.vered||0;S.zoc=o.zoc||0;S.baseV=o.baseV||0;S.bank=o.bank||0;S.terX=o.terX||0;S.terZ=o.terZ||0;sel=null;$('#bUndo').disabled=!undo.length;commit(true)}
 $('#bUndo').addEventListener('click',doUndo);$('#bUndo2').addEventListener('click',doUndo);
 function renderPanel(){const el=$('#rp');let h='';
  if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(!w){sel=null;return renderPanel()}
@@ -1281,7 +1300,7 @@ $('#bWv').addEventListener('click',()=>{const ks=Object.keys(WVN);S.wv=ks[(ks.in
 (()=>{let seen=false;try{seen=!!localStorage.getItem('casas-gest')}catch(e){}if(touchy&&!seen){$('#gest').classList.remove('hide');setTimeout(()=>$('#gest').classList.add('hide'),15000)}
  $('#bGestX').addEventListener('click',()=>{$('#gest').classList.add('hide');try{localStorage.setItem('casas-gest','1')}catch(e){}})})();
 
-const APPV=20;$('#vtag').textContent='v'+APPV;
+const APPV=21;$('#vtag').textContent='v'+APPV;
 (()=>{const el=$('#appv');let t=`Versión ${APPV} del Constructor de casas.`;const A=window.AndroidApp;
  el.innerHTML=t+(A&&A.update?' <button class="b" id="bUpd">Buscar actualización</button>':'')+' <button class="b" id="bTut">Ver tutorial</button>';$('#bTut').addEventListener('click',()=>{$('#sheet').classList.add('hide');tutStart()});if(A&&A.update)$('#bUpd').addEventListener('click',()=>{toast('Buscando actualización…');A.update()})})();
 
@@ -1858,6 +1877,11 @@ function drawFx(){if(!R)return;clear(FX);const H=+S.H,y0=Y0();let lab=null;
   else if(g.k==='cut'){const w=g.w,grp=new THREE.Group();grp.position.set(w.x1,y0,w.y1);grp.rotation.y=-Math.atan2(w.y2-w.y1,w.x2-w.x1);FX.add(grp);if(!drawFx.cm)drawFx.cm=mat(0xd12f2f,{transparent:true,opacity:0.55,depthWrite:false});
    wbox(Math.max(0.05,g.b-g.a),+S.H+0.06,0.34,(g.a+g.b)/2,(+S.H)/2,0,drawFx.cm,grp).castShadow=false;lab={x:w.x1+(w.x2-w.x1)*(g.a+g.b)/2/g.L,y:w.y1+(w.y2-w.y1)*(g.a+g.b)/2/g.L,t:'Cortar '+fm(g.b-g.a)+' m'}}
   else if(g.k==='brush'){const r=new THREE.Mesh(new THREE.RingGeometry(Math.max(0.1,brush-0.1),brush,40),GMD);r.rotation.x=-Math.PI/2;r.position.set(g.x,effH(g.x,g.y)+0.15,g.y);FX.add(r)}}
+ if(typeof moveFx!=='undefined'&&moveFx&&Date.now()-moveFx.t<9000){const m=moveFx,L=Math.hypot(m.x2-m.x1,m.z2-m.z1);if(L>0.5){if(!drawFx.am)drawFx.am=mat(0xe07a1f,{emissive:0x7a3a00});const n=Math.max(6,Math.round(L*1.5)),hh=Math.min(6,2+L*0.25),P=[];
+   for(let k=0;k<=n;k++){const t=k/n,x=m.x1+(m.x2-m.x1)*t,z=m.z1+(m.z2-m.z1)*t,y=(effH(m.x1,m.z1)*(1-t)+effH(m.x2,m.z2)*t)+0.6+hh*4*t*(1-t);P.push(new THREE.Vector3(x,y,z))}
+   const cv=new THREE.CatmullRomCurve3(P),tb=new THREE.Mesh(new THREE.TubeGeometry(cv,40,0.13,8),drawFx.am);FX.add(tb);
+   const a=P[P.length-1],b=P[P.length-2],cn=new THREE.Mesh(new THREE.ConeGeometry(0.45,1,12),drawFx.am);cn.position.copy(a);cn.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),a.clone().sub(b).normalize());FX.add(cn);
+   const mid=P[Math.round(n/2)];if(!lab)lab={x:mid.x,y:mid.z,t:`🚜 ${nf(m.v,1)} m³ de tierra`}}}
  FX.lab=lab;posLab();draw()}
 
 /* ---------- ciclo ---------- */
