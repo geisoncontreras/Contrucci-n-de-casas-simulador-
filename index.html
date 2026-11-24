@@ -39,7 +39,9 @@ header p{margin:0;color:var(--mut);max-width:70ch}
 .tut-card h3{margin:2px 0 6px;font-size:19px}.tut-card .tut-t{margin:0 0 12px;line-height:1.45}.tut-n{margin:0;font-size:13px;opacity:.65}
 .tut-b{display:flex;gap:8px;align-items:center}.tut-b span{flex:1}.tut-b .pri{background:#c4532d;color:#fff;border-color:#c4532d}
 @media(prefers-reduced-motion:reduce){.tut-hl{transition:none}}
-#vtag{position:absolute;left:8px;bottom:6px;font:600 11px Barlow,sans-serif;color:rgba(20,22,24,.55);background:rgba(255,255,255,.55);border-radius:6px;padding:1px 6px;pointer-events:none;z-index:3}
+#bMat{position:absolute;left:8px;bottom:8px;z-index:4;display:flex;align-items:center;gap:6px;font:600 12px Barlow,sans-serif;color:#1c1d1f;background:rgba(255,255,255,.9);border:0;border-radius:999px;padding:4px 10px 4px 6px;min-height:30px;box-shadow:0 1px 4px rgba(0,0,0,.2);cursor:pointer}
+#bMat .vt0{color:#6b6f75;font-weight:600}#bMat .sx{width:1px;height:14px;background:#ccc}
+.panes{position:relative}
 #v3{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
 #v3msg{position:absolute;inset:0;display:grid;place-items:center;color:#333;padding:20px;text-align:center;pointer-events:none}
 #lab3{position:absolute;transform:translate(-50%,-100%);background:#c4532d;color:#fff;font:700 16px Barlow;padding:3px 9px;border-radius:8px;pointer-events:none;white-space:nowrap;display:none}
@@ -47,6 +49,11 @@ header p{margin:0;color:var(--mut);max-width:70ch}
 .tool{flex:none;width:72px;min-height:60px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:600 13px Barlow}
 .tool svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tool.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.tool .ti{display:grid;place-items:center;width:34px;height:30px;border-radius:9px;background:var(--tc,#eee);color:var(--tk,#333)}
+.tool .ts{font-size:10px;font-weight:500;opacity:.7;line-height:1;margin-top:1px;white-space:nowrap}
+.tool.on .ti{background:rgba(255,255,255,.25);color:#fff}.tool.on .ts{opacity:.9}
+.tool[data-g=c]{--tc:#f6dfd3;--tk:#a5401f}.tool[data-g=d]{--tc:#dfe8f6;--tk:#2f5a8f}.tool[data-g=e]{--tc:#e1f0d8;--tk:#3f7a2a}.tool[data-g=x]{--tc:#ececea;--tk:#4a4d52}
+@media(prefers-color-scheme:dark){.tool[data-g]{--tc:rgba(255,255,255,.12);--tk:#f0ece6}}
 .tools .gap{flex:1 0 8px}
 .sub{display:flex;gap:6px;overflow-x:auto;min-height:50px;align-items:center;padding:2px}
 .sub:empty{min-height:0}
@@ -133,7 +140,7 @@ footer{padding:20px 0 40px;color:var(--mut);font-size:14px}
 .sub .card.on{background:var(--sel)}
 @media(max-width:900px){.topbar .seg{display:flex}.brand{display:none}}
 @media(max-width:600px){.tools #bUp{display:none}.tools{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));overflow:visible;gap:4px;padding:0}.tools .gap{display:none}.tool{width:auto;min-height:54px;font-size:11.5px;letter-spacing:-.2px;border-radius:10px}
- .tool svg{width:22px;height:22px}.vt .mo{display:none}.vt button{min-height:38px}.tb{padding:0 9px;font-size:14px}#bMat b{font-weight:700}}
+ .tool svg{width:20px;height:20px}.tool .ti{width:30px;height:26px}.vt .mo{display:none}.vt button{min-height:38px}.tb{padding:0 9px;font-size:14px}#bMat b{font-weight:700}}
 #toast{left:12px;right:12px;transform:none;margin:0 auto;width:fit-content;max-width:none;text-align:center}
 .sub.two{flex-direction:column;align-items:stretch;gap:4px;overflow:visible}.sub .row{display:flex;gap:6px;overflow-x:auto;align-items:center;scroll-snap-type:x proximity;padding:1px}
 .sub.two .row:first-child button{min-height:36px}
@@ -150,17 +157,17 @@ footer{padding:20px 0 40px;color:var(--mut);font-size:14px}
     <b class="brand">Constructor de casas</b>
     <div class="seg" id="seg"><button data-v="d3" class="on">3D</button><button data-v="plan">Plano</button></div>
     <button class="tb" id="bUndo" disabled aria-label="Deshacer" title="Deshacer">↶</button>
-    <button class="tb" id="bMat"><b id="tbCem">0</b> sacos · Materiales</button>
     <button class="tb" id="bMenu" aria-label="Menú">☰ Menú</button>
   </div>
   <div class="panes">
+    <button id="bMat" aria-label="Ver materiales y costo"><span class="vt0" id="vtag"></span><span class="sx"></span><span>🧱 <b id="tbCem">0</b> sacos</span><span class="sx"></span><span id="tbCost">$0</span></button>
     <section class="pane" id="view" aria-label="Vista 3D para construir">
       <canvas id="v3"></canvas>
       <div id="v3msg">Cargando vista 3D…</div>
       <div id="lab3"></div>
-      <div id="vtag"></div>
+      
       <div class="vt">
-        <div id="wv" role="group" aria-label="Vista de muros"><button id="bWv">Muros: recortados</button><span class="hide"><button data-wv="techo">Con techo</button><button data-wv="altos">Altos</button><button data-wv="corte">Recortados</button><button data-wv="bajos">Bajos</button></span></div>
+        <div id="wv" role="group" aria-label="Vista de muros"><button id="bWv">Muros: recortados</button><button id="bPl" class="hide" aria-pressed="true">Plano: visible</button><button id="bSnd" aria-label="Sonido">🔇</button><span class="hide"><button data-wv="techo">Con techo</button><button data-wv="altos">Altos</button><button data-wv="corte">Recortados</button><button data-wv="bajos">Bajos</button></span></div>
         <div><button id="bRl" class="mo" aria-label="Girar a la izquierda">⟲</button><button id="bRr" class="mo" aria-label="Girar a la derecha">⟳</button><button id="bCz" class="mo" aria-label="Acercar">+</button><button id="bCo" class="mo" aria-label="Alejar">−</button><button id="bCam">Centrar</button><button id="bUndo2" class="fso" aria-label="Deshacer">↶</button><button id="bFs" aria-label="Pantalla completa" title="Pantalla completa">⛶</button></div>
       </div>
       <div id="gest" class="gest hide">✌️ Dos dedos: girar en todos los ángulos · Pellizcar: acercar · Tres dedos: mover <button id="bGestX" aria-label="Cerrar">✕</button></div>
@@ -348,6 +355,7 @@ const ICO={
  borrar:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
  techo:'<path d="M2 12 12 4l10 8"/><path d="M5 10v9h14v-9"/>',
  mano:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'};
+const TSUB={cuarto:['c','4 muros'],muro:['c','1 muro'],puerta:['c','en muro'],ventana:['c','en muro'],mueble:['d','amoblar'],pintar:['d','colores'],piso:['d','suelos'],techo:['c','cubrir'],tierra:['e','patio'],elegir:['x','cambiar'],borrar:['x','quitar'],mano:['x','la vista']};
 const TOOLS=[['cuarto','Habitación','Arrastra en diagonal sobre el suelo: se levantan los 4 muros. Junta habitaciones y comparten el muro.'],
  ['muro','Muro','Arrastra de un punto a otro. Ves el largo mientras lo dibujas; se ajusta a la grilla y a las esquinas.'],
  ['puerta','Puerta','Elige el tipo abajo y toca un muro. Arrastra para moverla.'],
@@ -480,7 +488,7 @@ const TPL={
   [['alfombra',1.6,2,90],['sofa',0.515,2,270],['mesac',1.55,2,90],['tv',2.9,2,90],['planta',0.4,0.45,0],['comedor',4.7,2,0],['refri',7.56,0.45,90],['lavaplatos',7.61,2,90],['cocina',7.61,3,90],
    ['cama2',1.75,6.41,180],['closet',3.15,5,90],['velador',0.6,7.21,180],['cama2',6.5,6.41,180],['inodoro',4,5.8,180],['lavamanos',4.725,5.2,90]])
 };
-const DEF={prices:{},ftile:{},vered:0,zoc:0,paths:[],terR:0,terX:0,terZ:0,roofF:1,roofX:{},roofP:20,roofO:0,roofC:null,ter:'ciudad',pisos:1,H:2.4,muro:'ladrillo',techo:'zinc',roofMode:'dos',merma:10,env:true,snap:0.25,fach:'visto',wv:'corte',padOff:0};
+const DEF={conc:{},snd:1,prices:{},ftile:{},vered:0,zoc:0,paths:[],terR:0,terX:0,terZ:0,roofF:1,roofX:{},roofP:20,roofO:0,roofC:null,ter:'ciudad',pisos:1,H:2.4,muro:'ladrillo',techo:'zinc',roofMode:'dos',merma:10,env:true,snap:0.25,fach:'visto',wv:'corte',padOff:0};
 let S,G,VB,tool='cuarto',sel=null,act=null,prev=null,ghost=null,undo=[],photo=null,under=null,DL=null,M=null;
 let cal=null,UT=null;
 let doorK='simple',winK='estandar',cat='Dormitorio',fk='cama2',frot=0,paint='salvia',floorK='madera',tmode='subir',brush=1.5,pathW=1.2,fmode='cuarto',fsize=0.5;
@@ -489,7 +497,7 @@ const fix=o=>{o.furn=Array.isArray(o.furn)?o.furn:[];o.dig=o.dig&&typeof o.dig==
 try{const j=JSON.parse(localStorage.getItem('casas-v2'));if(j&&Array.isArray(j.walls))S=fix(Object.assign({},DEF,j))}catch(e){}
 if(!S)S=fix(Object.assign({},DEF,TPL.dos()));
 const save=()=>{try{localStorage.setItem('casas-v2',JSON.stringify(S))}catch(e){}};
-const snap=()=>{undo.push(JSON.stringify({ftile:S.ftile,paths:S.paths,vered:S.vered,zoc:S.zoc,walls:S.walls,ops:S.ops,labels:S.labels,furn:S.furn,fach:S.fach,dig:S.dig,padOff:S.padOff,terR:S.terR,terX:S.terX,terZ:S.terZ}));if(undo.length>60)undo.shift();$('#bUndo').disabled=false};
+const snap=()=>{undo.push(JSON.stringify({conc:S.conc,ftile:S.ftile,paths:S.paths,vered:S.vered,zoc:S.zoc,walls:S.walls,ops:S.ops,labels:S.labels,furn:S.furn,fach:S.fach,dig:S.dig,padOff:S.padOff,terR:S.terR,terX:S.terX,terZ:S.terZ}));if(undo.length>60)undo.shift();$('#bUndo').disabled=false};
 const toast=(m,ms)=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.k);toast.k=setTimeout(()=>t.classList.remove('on'),ms||2400)};
 const overlaps=()=>null;
 
@@ -683,6 +691,7 @@ function calc(){
    add(EX,`Base elevada: muro de hormigón 20 cm × ${fm(zh)} m`,m1(v),'m³',`La casa queda ${fm(zh)} m más alta; ${nf(per,1)} m de perímetro`);
    add(EX,'Relleno compactado bajo el piso',m1(A*zh*f),'m³','Estabilizado en capas de 20 cm');
    if(nd)add(EX,`Escaleras de hormigón (${ns} peldaños)`,m1(ve),'m³',`${nd} en las puertas de afuera`)}}
+ {const cv=Object.values(S.conc||{}).reduce((t,v)=>t+v,0);if(cv>0.01){hc+=cv;add('Exterior: vereda, caminos y base','Hormigón para rellenar el terreno',m1(cv*f),'m³',`${Object.keys(S.conc).length} m² con cemento (hoyos rellenos y radier)`)}}
  const cem=hc*12+hl*7+mort*14;
  add(HF,'Hormigón total',m1((hc+hl)*f),'m³',hl?'H20 en estructura y radier; H10 con bolón en cimientos':'Dosificación aproximada H20');
  add(HF,'Cemento',up(cem*f),'sacos 25 kg','Hormigón + mortero');
@@ -708,21 +717,21 @@ const PR=[[/^Hormigón H25/,110000],[/^Cemento/,4800],[/^Arena/,25000],[/^Grava/
  [/^Cerámica o porcelanato/,9000],[/^Adhesivo cerámico/,6000],[/^Fragüe/,1500],[/^Piso flotante/,9500],[/^Espuma niveladora/,900],[/^Guardapolvo/,1500],[/^Alfombra de muro/,12000],[/^Sellador/,9000],[/^Piso vinílico/,12000],[/^Adhesivo para vinílico/,25000],
  [/^Pintura/,22000],[/^Puerta exterior/,160000],[/^Puerta/,75000],[/^Sellante/,4500],[/^Excavación/,8000],[/^Relleno compactado/,10000],[/^Material de relleno/,18000],[/^Tierra sobrante/,6000],[/^Viajes de camión/,70000],
  [/^Retroexcavadora/,35000],[/^Arriendo de placa/,30000],[/^Tubo de drenaje/,3500],[/^Grava para drenaje/,28000],[/^Pilotes/,18000],[/^Pernos/,1500],[/^Poliestireno/,3500],[/^OSB 11 mm 1,22×2,44 m \(piso\)/,19000],[/^OSB 18 mm 1,22×2,44 m \(piso\)/,19000]];
-const PINC=/^(Hormigón total|Mortero|Estuco|Cimiento|Sobrecimiento|Radier|Losa de entrepiso|Losa flotante|Pilares|Cadenas|Muro de hormigón|Muro de contención|Dados|Vereda|Caminos|Base elevada|Escaleras|Junta)/;
+const PINC=/^(Hormigón total|Hormigón para rellenar|Mortero|Estuco|Cimiento|Sobrecimiento|Radier|Losa de entrepiso|Losa flotante|Pilares|Cadenas|Muro de hormigón|Muro de contención|Dados|Vereda|Caminos|Base elevada|Escaleras|Junta)/;
 function priceOf(n){const P=S.prices||{};if(P[n]!=null)return +P[n];if(PINC.test(n))return null;const w=n.match(/^Ventana ([\d,]+) × ([\d,]+)/);if(w)return Math.round(parseFloat(w[1].replace(',','.'))*parseFloat(w[2].replace(',','.'))*110000/1000)*1000;
  for(const[r,v]of PR)if(r.test(n))return v;return 0}
 
 function renderMat(){
  M=calc();
  $('#warn').innerHTML='';
- if(!M){$('#tbCem').textContent='0';$('#sum').innerHTML='';$('#mlist').innerHTML='<p class="muted">Cierra al menos una habitación con muros para calcular los materiales.</p>';return}
+ if(!M){$('#tbCem').textContent='0';$('#tbCost').textContent='$0';$('#sum').innerHTML='';$('#mlist').innerHTML='<p class="muted">Cierra al menos una habitación con muros para calcular los materiales.</p>';return}
  const s=M._sum;$('#tbCem').textContent=s.cem;
  $('#sum').innerHTML=[[nf(s.A,1)+' m²','Superficie construida'],[nf(s.wl,1)+' m','Muros por piso'],[nf(s.rA,1)+' m²','Techo'],[s.cem,'Sacos de cemento'],['<span id="costS"></span>','Costo estimado']].concat(s.tierra>0.05?[[nf(s.tierra,1)+' m³','Tierra movida (corte + relleno)']]:[]).map(([a,b])=>`<div><b>${a}</b><span>${b}</span></div>`).join('');
  const clp=v=>'$'+Math.round(v).toLocaleString('es-CL');
  $('#mlist').innerHTML='<p class="muted">Los precios son un <b>estimado en pesos chilenos</b>. Toca un precio para cambiarlo por el de tu ferretería; el total se recalcula.</p>'+Object.keys(M).filter(k=>k[0]!=='_').map(k=>`<h3>${k}</h3><table class="stack"><thead><tr><th>Material</th><th style="text-align:right">Cantidad</th><th>Unidad</th><th>Precio unit.</th><th style="text-align:right">Subtotal</th><th>Nota</th></tr></thead><tbody>${M[k].map(r=>{const pu=priceOf(r[0]);return`<tr><td>${esc(r[0])}</td><td class="q">${nf(r[1],1)}</td><td class="u">${esc(r[2])}</td><td class="pr">${pu==null?'<span class="muted">en totales</span>':`<input class="pin" inputmode="numeric" data-pn="${esc(r[0])}" data-q="${r[1]}" value="${pu?Math.round(pu).toLocaleString('es-CL'):''}" placeholder="$ precio" aria-label="Precio unitario de ${esc(r[0])}">`}</td><td class="q st">${pu?clp(pu*r[1]):''}</td><td class="n">${esc(r[3])}</td></tr>`}).join('')}</tbody></table>`).join('')+'<div class="ctot"><b>Costo estimado de materiales: <span id="ctot"></span></b> <button class="b" id="bPr0">Precios originales</button></div>';
  updTot();
 }
-function updTot(){let t=0;$$('#mlist .pin').forEach(i=>{const v=+i.value.replace(/\D/g,'')||0;t+=v*(+i.dataset.q)});const e=$('#ctot');if(e)e.textContent='$'+Math.round(t).toLocaleString('es-CL');const c=$('#costS');if(c)c.textContent='$'+Math.round(t/1000).toLocaleString('es-CL')+' mil'}
+function updTot(){let t=0;$$('#mlist .pin').forEach(i=>{const v=+i.value.replace(/\D/g,'')||0;t+=v*(+i.dataset.q)});const e=$('#ctot');if(e)e.textContent='$'+Math.round(t).toLocaleString('es-CL');const c=$('#costS');if(c)c.textContent='$'+Math.round(t/1000).toLocaleString('es-CL')+' mil';const tc=$('#tbCost');if(tc)tc.textContent=t>=1e6?'$'+(t/1e6).toLocaleString('es-CL',{maximumFractionDigits:1})+' M':'$'+Math.round(t/1000).toLocaleString('es-CL')+' mil'}
 $('#mlist').addEventListener('input',e=>{const i=e.target.closest('.pin');if(!i)return;const v=+i.value.replace(/\D/g,'')||0;S.prices=Object.assign({},S.prices||{});S.prices[i.dataset.pn]=v;save();const st=i.closest('tr').querySelector('.st');if(st)st.textContent=v?'$'+Math.round(v*(+i.dataset.q)).toLocaleString('es-CL'):'';updTot()});
 $('#mlist').addEventListener('change',e=>{const i=e.target.closest('.pin');if(i){const v=+i.value.replace(/\D/g,'')||0;i.value=v?v.toLocaleString('es-CL'):''}});
 $('#mlist').addEventListener('click',e=>{if(e.target.id==='bPr0'){S.prices={};save();renderMat();toast('Precios originales')}});
@@ -767,12 +776,13 @@ function planSVG(ex){
   s+=`<path d="${d}" stroke="var(--grid)" stroke-width="${vb.w/600}"/><path d="${d2}" stroke="var(--grid2)" stroke-width="${vb.w/500}"/>`;
   if(G.cu)s+=`<path d="${G.cu}" fill="#a0683a" fill-opacity=".22"/>`;if(G.fi)s+=`<path d="${G.fi}" fill="#5f8f3f" fill-opacity=".22"/>`;
   if(G.ct)s+=`<path d="${G.ct}" fill="none" stroke="#9a7b4f" stroke-width="${vb.w/450}" opacity=".7"/>`;
-  if(under)s+=`<image href="${under}" x="${ul.x}" y="${ul.y}" width="${ul.w}" height="${ul.w*(ul.ar||1)}" opacity="${ul.o/100}" preserveAspectRatio="none"/>`}
+  if(under&&!ul.hid)s+=`<image href="${under}" x="${ul.x}" y="${ul.y}" width="${ul.w}" height="${ul.w*(ul.ar||1)}" opacity="${ul.o/100}" preserveAspectRatio="none"/>`}
  for(const q of S.paths||[])s+=`<line x1="${q.x1}" y1="${q.y1}" x2="${q.x2}" y2="${q.y2}" stroke="#b9b6ae" stroke-width="${q.w}" stroke-linecap="square"/>`;
  if(+S.vered&&G.rooms.length){const v=+S.vered;for(const r of footRects(G))s+=`<rect x="${r.x-v}" y="${r.y-v}" width="${r.w+2*v}" height="${r.d+2*v}" fill="#c9c6be"/>`}
  const selRoom=!ex&&sel&&sel.k==='room'?roomAt(sel):null;
  for(const f of G.rooms){const fc=!ex&&f.fp&&FLOOR[f.fp]?FLOOR[f.fp][1]:C.room;
   s+=`<path d="M${f.pts.map(p=>p.join(' ')).join('L')}Z" fill="${f===selRoom?C.sel:fc}" fill-opacity="${ex?1:f===selRoom?1:f.fp?0.5:(under?0.5:1)}"/>`}
+ for(const k of Object.keys(S.conc||{})){const[i,j]=k.split(',').map(Number);s+=`<rect x="${TG.x0+i-0.5}" y="${TG.z0+j-0.5}" width="1" height="1" fill="#a8a59d" opacity=".85"/>`}
  if(!ex)for(const[key,kd]of Object.entries(S.ftile||{})){if(!FLOOR[kd])continue;const c=tileC(key);s+=`<rect x="${c.x}" y="${c.y}" width="${TS}" height="${TS}" fill="${FLOOR[kd][1]}" fill-opacity=".75"/>`}
  const fu=[...S.furn].sort((a,b)=>(b.k==='alfombra')-(a.k==='alfombra'));
  for(const f of fu)s+=fSVG(f,C,!ex&&sel&&sel.k==='furn'&&sel.id===f.id,false,fs);
@@ -838,9 +848,10 @@ function addOp(n,t,v){const W=t==='ventana'?WIN[v]||WIN.estandar:null,D=t==='pue
 function grabF(f,p){snap();sel={k:'furn',id:f.id};act={k:'mf',id:f.id,dx:f.x-p.x,dy:f.y-p.y,r0:f.r,moved:false};refreshSel()}
 function brushAt(p,a){const R=brush,i0=clamp(Math.floor(p.x-TG.x0-R),0,TG.n),i1=clamp(Math.ceil(p.x-TG.x0+R),0,TG.n),j0=clamp(Math.floor(p.y-TG.z0-R),0,TG.n),j1=clamp(Math.ceil(p.y-TG.z0+R),0,TG.n);
  for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++){const x=TG.x0+i,z=TG.z0+j,d=Math.hypot(x-p.x,z-p.y);if(d>R)continue;const w=1-(d/R)**2,k=i+','+j;let v=S.dig[k]||0;
-  if(tmode==='subir')v+=0.15*w;else if(tmode==='bajar')v-=0.15*w;else if(tmode==='aplanar')v+=(a.target-(nat(x,z)+v))*0.6*w;else v*=1-0.6*w;
+  if(tmode==='cemento'){if(w<0.25)continue;S.conc=S.conc||{};const hole=Math.max(0,-v);S.conc[k]=Math.round(Math.max(S.conc[k]||0.1,(S.conc[k]||0)+hole)*1000)/1000;if(hole>0)delete S.dig[k];a.cem=1;continue}
+  if(tmode==='hoyo'){v-=0.3*w*w;if(S.conc&&S.conc[k])delete S.conc[k]}else if(tmode==='subir')v+=0.15*w;else if(tmode==='bajar')v-=0.15*w;else if(tmode==='aplanar')v+=(a.target-(nat(x,z)+v))*0.6*w;else v*=1-0.6*w;
   v=clamp(Math.round(v*1000)/1000,-6,6);if(Math.abs(v)<0.005)delete S.dig[k];else S.dig[k]=v}
- const op=G.pad;G=geo();if(G.pad!==op)build3D();else{updTerrain();draw()}drawPlan()}
+ const op=G.pad;G=geo();if(G.pad!==op||a.cem)build3D();else{updTerrain();draw()}drawPlan();if(typeof sfx==='function')sfx(tmode==='cemento'?'cem':'dig')}
 function tDown(p,pk,src){if(!p)return;ghost=null;hover.k='';const t=tool;
  if(t==='muro'||t==='cuarto'){const q=snapP(pk.q||p,stol(src));act={k:t,x1:q.x,y1:q.y,src};prev={k:t,x1:q.x,y1:q.y,x2:q.x,y2:q.y};refresh();return}
  if(t==='puerta'||t==='ventana'){const n=pk.wall||nearWall(p,wtol(src))||nearWall(p,1.6);if(!n){toast('Toca cerca de un muro');return}const o=addOp(n,t,t==='ventana'?winK:doorK);if(!o)return;act={k:'mop',id:o.id,moved:true,src};commit(true);return}
@@ -849,7 +860,7 @@ function tDown(p,pk,src){if(!p)return;ghost=null;hover.k='';const t=tool;
  if(t==='elegir'){if(pk.furn)return grabF(pk.furn,p);
   if(pk.op){snap();sel={k:'op',id:pk.op.id};act={k:'mop',id:pk.op.id,moved:false,src};refreshSel();return}
   if(pk.wall)sel={k:'wall',id:pk.wall.w.id,t:pk.wall.t};else if(pk.room)sel={k:'room',x:pk.room.c[0],y:pk.room.c[1]};else sel=null;refreshSel();return}
- if(t==='borrar'){if(pk.furn){snap();S.furn=S.furn.filter(q=>q!==pk.furn);sel=null;commit(true);return}
+ if(t==='borrar'){sfx('del');if(pk.furn){snap();S.furn=S.furn.filter(q=>q!==pk.furn);sel=null;commit(true);return}
   if(pk.op){snap();S.ops=S.ops.filter(q=>q.id!==pk.op.id);sel=null;commit(true);return}
   if(pk.wall){const w=pk.wall.w,L=pk.wall.L,t=pk.wall.t;
    if(bmode==='trozo'){snap();const d=erasePiece(w,t,L);act={k:'erase',src,n:d?1:0};live();return}
@@ -858,7 +869,7 @@ function tDown(p,pk,src){if(!p)return;ghost=null;hover.k='';const t=tool;
    else{const sp=wallSpan(w,t);cutWall(w,sp.a,sp.b);toast(`Tramo de ${fm(sp.b-sp.a)} m borrado`)}
    sel=null;commit(true);return}
   toast('Toca un muro, puerta, ventana o mueble');return}
- if(t==='pintar'){const nm=PAINT[paint]?PAINT[paint][0]:'material visto';
+ if(t==='pintar'){sfx('paint');const nm=PAINT[paint]?PAINT[paint][0]:'material visto';
   if(pk.furn||pk.op){const it=pk.furn||S.ops.find(q=>q.id===pk.op.id);if(it){snap();if(PAINT[paint])it.c=PAINT[paint][1];else delete it.c;commit(true);toast((pk.furn?FURN[it.k].n:it.t==='puerta'?'Puerta':'Ventana')+': '+nm);return}}
   if(pk.room){snap();setRoomProp(pk.room,'wp',paint);commit(true);toast(`Paredes de ${pk.room.name?'«'+pk.room.name+'»':'la habitación'}: ${nm}`);return}
   if(pk.facade){snap();S.fach=paint;commit(true);toast('Fachada: '+nm);return}
@@ -886,9 +897,9 @@ function tUp(){const a=act;act=null;if(!a)return;
  if(a.k==='ftile'){if(a.n)commit(true);else{undo.pop();$('#bUndo').disabled=!undo.length;toast('Toca dentro de una habitación')}return}
  if(a.k==='path'){const p=prev;prev=null;if(p&&Math.hypot(p.x2-p.x1,p.y2-p.y1)>=0.5){snap();S.paths=(S.paths||[]).concat([{id:uid(),x1:p.x1,y1:p.y1,x2:p.x2,y2:p.y2,w:pathW}]);commit(true);toast(`Camino de ${fm(Math.hypot(p.x2-p.x1,p.y2-p.y1))} m. Arrastra otra vez para seguirlo`)}else refresh();return}
  if(a.k==='muro'||a.k==='cuarto'){const p=prev;prev=null;
-  if(p&&a.k==='muro'){if(Math.hypot(p.x2-p.x1,p.y2-p.y1)>=0.2){snap();const w={id:uid(),x1:p.x1,y1:p.y1,x2:p.x2,y2:p.y2,m:wallM()};S.walls.push(w);sel={k:'wall',id:w.id};commit(true);return}}
+  if(p&&a.k==='muro'){if(Math.hypot(p.x2-p.x1,p.y2-p.y1)>=0.2){snap();sfx('build');const w={id:uid(),x1:p.x1,y1:p.y1,x2:p.x2,y2:p.y2,m:wallM()};S.walls.push(w);sel={k:'wall',id:w.id};commit(true);return}}
   else if(p){const x=Math.min(p.x1,p.x2),y=Math.min(p.y1,p.y2),w=Math.abs(p.x2-p.x1),h=Math.abs(p.y2-p.y1);
-   if(w>=0.5&&h>=0.5){snap();S.walls.push(...RW(x,y,w,h));sel={k:'room',x:x+w/2,y:y+h/2};commit(true);toast(`Habitación de ${fm(w)} × ${fm(h)} m (${nf(w*h,2)} m²)`);return}}
+   if(w>=0.5&&h>=0.5){snap();sfx('build');S.walls.push(...RW(x,y,w,h));sel={k:'room',x:x+w/2,y:y+h/2};commit(true);toast(`Habitación de ${fm(w)} × ${fm(h)} m (${nf(w*h,2)} m²)`);return}}
   refresh();return}
  if(a.k==='mf'||a.k==='mop'){if(a.moved)commit(true);else{undo.pop();$('#bUndo').disabled=!undo.length}return}
  if(a.k==='dig')commit(false);
@@ -932,7 +943,7 @@ $('#bZi').addEventListener('click',()=>zoom(0.8));$('#bZo').addEventListener('cl
 new ResizeObserver(()=>{const W=plan.clientWidth,Hh=plan.clientHeight;if(!W||!Hh)return;if(!VB||!fitVB.done){fitVB.done=1;fitVB();drawPlan();return}const h=VB.w*Hh/W;VB.y+=(VB.h-h)/2;VB.h=h;drawPlan()}).observe(plan);
 
 /* ---------- barra de herramientas y barra de opciones ---------- */
-$('#tools').innerHTML=TOOLS.map(([k,l])=>`<button class="tool" data-tool="${k}"><svg viewBox="0 0 24 24">${ICO[k]}</svg>${l}</button>`).join('')+'<span class="gap"></span><label class="tool" id="bUp" title="Subir foto del plano"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg><span id="bUpT">Subir plano</span><input type="file" id="fPlan2" accept="image/*" hidden></label>';
+$('#tools').innerHTML=TOOLS.map(([k,l,tip])=>`<button class="tool" data-tool="${k}" data-g="${(TSUB[k]||['x'])[0]}" title="${esc(tip)}"><span class="ti"><svg viewBox="0 0 24 24">${ICO[k]}</svg></span>${l}<span class="ts">${(TSUB[k]||['',''])[1]}</span></button>`).join('')+'<span class="gap"></span><label class="tool" id="bUp" title="Subir foto del plano"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg><span id="bUpT">Subir plano</span><input type="file" id="fPlan2" accept="image/*" hidden></label>';
 const touchy=matchMedia('(pointer:coarse)').matches;
 const BUILD=['cuarto','muro','puerta','ventana','mueble'];
 function setTool(k){tool=k;if(sel&&!['elegir','puerta','ventana','borrar'].includes(k)&&!(k==='mueble'&&sel.k==='furn'))sel=null;if(k==='techo'&&S.wv!=='techo'){S.wv='techo';save();ui()}act=null;prev=null;ghost=null;hover.k='';$$('.tool[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===k));const T=TOOLS.find(t=>t[0]===k);
@@ -940,7 +951,7 @@ function setTool(k){tool=k;if(sel&&!['elegir','puerta','ventana','borrar'].inclu
  plan.style.cursor=k==='mano'?'grab':k==='elegir'||k==='borrar'?'pointer':'crosshair';cv.style.cursor=k==='mano'?'grab':k==='elegir'||k==='borrar'?'pointer':'crosshair';
  if(k!=='elegir'&&k!=='mueble'&&sel){sel=null;renderPanel()}
  if(GRID)GRID.visible=BUILD.includes(k);drawPlan();build3D();renderSub()}
-$('#tools').addEventListener('click',e=>{const b=e.target.closest('[data-tool]');if(b)setTool(b.dataset.tool)});
+$('#tools').addEventListener('click',e=>{const b=e.target.closest('[data-tool]');if(b){setTool(b.dataset.tool);sfx('tap')}});
 function rotSel(){const f=sel&&sel.k==='furn'&&S.furn.find(q=>q.id===sel.id);if(f){snap();f.r=(f.r+90)%360;frot=f.r;commit(true);return true}return false}
 function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';const fmm=v=>nf(v,2);
  if(cal){el.innerHTML=cal.pts.length<2?`<span class="lbl">Medir escala: en el plano, toca ${cal.pts.length?'el otro extremo':'un extremo'} de una medida que conozcas</span><button data-act="calx">Cancelar</button>`:
@@ -972,7 +983,7 @@ function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';cons
  else if(tool==='tierra')h='<span class="lbl">Vereda</span>'+[[0,'Sin vereda'],[0.6,'60 cm'],[1,'1 m'],[1.5,'1,5 m']].map(([v,n])=>`<button class="${(+S.vered||0)===v?'on':''}" data-ver="${v}">${n}</button>`).join('')+
   (S.ter!=='playa'?'<span class="sep"></span><span class="lbl">Levantar casa con hormigón</span>'+[[0,'No'],[0.3,'30 cm'],[0.6,'60 cm'],[0.9,'90 cm'],[1.2,'1,2 m']].map(([v,n])=>`<button class="${(+S.zoc||0)===v?'on':''}" data-zoc="${v}">${n}</button>`).join(''):'')+
   '<span class="sep"></span><span class="lbl">Camino</span>'+`<button class="${tmode==='camino'?'on':''}" data-tm="camino">✎ Dibujar camino</button>`+[[0.8,'Angosto'],[1.2,'Normal'],[3,'Para auto']].map(([v,n])=>`<button class="${tmode==='camino'&&pathW===v?'on':''}" data-pw="${v}">${n}</button>`).join('')+((S.paths||[]).length?'<button data-act="pathdel">Quitar último camino</button>':'')+
-  '<span class="sep"></span><span class="lbl">Casa</span><button data-act="hrot">↻ Girar casa 90°</button><span class="sep"></span><span class="lbl">'+(S.ter==='cerro'?'Cerro':'Terreno')+'</span><button data-act="tr-">↺ Girar</button><button data-act="tr+">↻ Girar</button>'+(S.ter==='cerro'?'<button data-act="tzu">▲ Casa más arriba</button><button data-act="tzd">▼ Más abajo</button><button data-act="txl">◀ Al lado</button><button data-act="txr">▶ Al otro lado</button>':'')+((+S.terR||+S.terX||+S.terZ)?'<button data-act="t0">Lugar original</button>':'')+'<span class="sep"></span>'+[['subir','▲ Subir'],['bajar','▼ Bajar'],['aplanar','Aplanar'],['restaurar','Restaurar']].map(([k,n])=>`<button class="${tmode===k?'on':''}" data-tm="${k}">${n}</button>`).join('')+'<span class="sep"></span>'+
+  '<span class="sep"></span><span class="lbl">Casa</span><button data-act="hrot">↻ Girar casa 90°</button><span class="sep"></span><span class="lbl">'+(S.ter==='cerro'?'Cerro':'Terreno')+'</span><button data-act="tr-">↺ Girar</button><button data-act="tr+">↻ Girar</button>'+(S.ter==='cerro'?'<button data-act="tzu">▲ Casa más arriba</button><button data-act="tzd">▼ Más abajo</button><button data-act="txl">◀ Al lado</button><button data-act="txr">▶ Al otro lado</button>':'')+((+S.terR||+S.terX||+S.terZ)?'<button data-act="t0">Lugar original</button>':'')+'<span class="sep"></span>'+[['subir','▲ Subir'],['bajar','▼ Bajar'],['hoyo','⛏ Hacer hoyo'],['cemento','🪣 Rellenar con cemento'],['aplanar','Aplanar'],['restaurar','Restaurar']].map(([k,n])=>`<button class="${tmode===k?'on':''}" data-tm="${k}">${n}</button>`).join('')+'<span class="sep"></span>'+
   [[0.8,'Pincel chico'],[1.5,'Mediano'],[3,'Grande']].map(([v,n])=>`<button class="${brush===v?'on':''}" data-br="${v}">${n}</button>`).join('')+
   (G.rb?`<span class="sep"></span><span class="lbl">Plataforma de la casa ${G.pad>=0?'+':'−'}${fm(Math.abs(G.pad))} m</span><button data-act="padup">Subir 10 cm</button><button data-act="paddn">Bajar 10 cm</button>${S.padOff?'<button data-act="pad0">Automática</button>':''}`:'')+
   `<span class="sep"></span><span class="lbl">Corte ${nf(G.cut,1)} m³ · Relleno ${nf(G.fill,1)} m³</span><button data-act="digreset">Terreno original</button>`;
@@ -1024,7 +1035,7 @@ $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
   S.padOff=0;commit(false);O.ty=Y0()+0.6;camUp();toast(a==='t0'?'Terreno en su lugar original':a[1]==='r'?`Terreno girado ${S.terR}°`:'Casa movida en el cerro: nivel '+(G.pad>=0?'+':'−')+fm(Math.abs(G.pad))+' m');return}
  if(a==='rgir'){snap();S.roofO=((S.roofO||0)+1)%4;if(S.wv!=='techo')S.wv='techo';commit(false);toast('Techo girado');return}
  if(a==='padup'||a==='paddn'||a==='pad0'){snap();S.padOff=a==='pad0'?0:r2((S.padOff||0)+(a==='padup'?0.1:-0.1));commit(false);O.ty=Y0()+0.6;camUp();return}
- if(a==='digreset'){if(!Object.keys(S.dig).length&&!S.padOff)return;snap();S.dig={};S.padOff=0;commit(false);toast('Terreno original. Puedes deshacer');return}
+ if(a==='digreset'){if(!Object.keys(S.dig).length&&!S.padOff&&!Object.keys(S.conc||{}).length)return;snap();S.dig={};S.conc={};S.padOff=0;commit(false);toast('Terreno original. Puedes deshacer');return}
  if(a==='type'||a==='wd+'||a==='wd-'){const o=S.ops.find(q=>q.id===sel.id);if(!o)return;snap();if(a==='type'){o.t=o.t==='puerta'?'ventana':'puerta';o.v=o.t==='ventana'?winK:doorK}else{o.wd=r2(clamp(o.wd+(a==='wd+'?0.1:-0.1),0.4,4))}commit(true);return}
  if((a==='addp'||a==='addv')&&sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(!w)return;const L=Math.hypot(w.x2-w.x1,w.y2-w.y1);if(addOp({w,t:0.5,L},a==='addp'?'puerta':'ventana',a==='addp'?doorK:winK))commit(true)}});
 document.addEventListener('keydown',e=>{if(e.target.matches('input,select'))return;
@@ -1044,7 +1055,7 @@ function rotHouse(){if(!S.walls.length){toast('Primero dibuja la casa');return}s
 function tilePaint(p,a){const n=fsize>=1?2:1,i0=Math.floor(p.x/TS),j0=Math.floor(p.y/TS),bi=n>1?i0-(i0%2+2)%2:i0,bj=n>1?j0-(j0%2+2)%2:j0,id=bi+','+bj;if(a.last===id)return;a.last=id;let ch=0;
  for(let i=bi;i<bi+n;i++)for(let j=bj;j<bj+n;j++){const k=i+','+j,c=tileC(k);if(!G.rooms.some(f=>G.inPoly(c.cx,c.cy,f.pts)))continue;if(floorK==='quitar'){if(S.ftile[k]){delete S.ftile[k];ch=1}}else if(S.ftile[k]!==floorK){S.ftile[k]=floorK;ch=1}}
  if(ch){a.n=(a.n||0)+1;commit(false)}}
-function doUndo(){const j=undo.pop();if(!j)return;const o=JSON.parse(j);S.walls=o.walls;S.ops=o.ops;S.labels=o.labels;S.furn=o.furn||[];S.fach=o.fach||'visto';S.dig=o.dig||{};S.padOff=o.padOff||0;S.terR=o.terR||0;S.ftile=o.ftile||{};S.paths=o.paths||[];S.vered=o.vered||0;S.zoc=o.zoc||0;S.terX=o.terX||0;S.terZ=o.terZ||0;sel=null;$('#bUndo').disabled=!undo.length;commit(true)}
+function doUndo(){const j=undo.pop();if(!j)return;const o=JSON.parse(j);S.walls=o.walls;S.ops=o.ops;S.labels=o.labels;S.furn=o.furn||[];S.fach=o.fach||'visto';S.dig=o.dig||{};S.conc=o.conc||{};S.padOff=o.padOff||0;S.terR=o.terR||0;S.ftile=o.ftile||{};S.paths=o.paths||[];S.vered=o.vered||0;S.zoc=o.zoc||0;S.terX=o.terX||0;S.terZ=o.terZ||0;sel=null;$('#bUndo').disabled=!undo.length;commit(true)}
 $('#bUndo').addEventListener('click',doUndo);$('#bUndo2').addEventListener('click',doUndo);
 function renderPanel(){const el=$('#rp');let h='';
  if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(!w){sel=null;return renderPanel()}
@@ -1111,7 +1122,7 @@ function loadImg(file,max,cb){if(!file)return;
 const saveUnder=()=>{try{if(under)localStorage.setItem('casas-plano',JSON.stringify({u:under,ul}));else localStorage.removeItem('casas-plano')}catch(e){}};
 function showPlanPane(){if(matchMedia('(max-width:900px)').matches){$('#stage').dataset.v='plan';$$('#seg button').forEach(x=>x.classList.toggle('on',x.dataset.v==='plan'));requestAnimationFrame(()=>{if(!fitVB.done){fitVB();fitVB.done=1}drawPlan()})}}
 function syncUl(){[['#uW','w'],['#uO','o'],['#uX','x'],['#uY','y']].forEach(([i,k])=>$(i).value=r2(ul[k]));$('#planCfg').classList.toggle('hide',!under);$('#bUpT').textContent=under?'Cambiar plano':'Subir plano'}
-function setUnder(u,w,h,keep){under=u;ul.ar=h/w;if(!keep){ul.w=G.segs.length?Math.max(6,Math.ceil(G.bw+2)):12;ul.x=G.segs.length?G.mnx-1:0;ul.y=G.segs.length?G.mny-1:0;ul.o=60}syncUl();saveUnder();drawPlan();build3D()}
+function setUnder(u,w,h,keep){under=u;ul.hid=false;ul.ar=h/w;if(!keep){ul.w=G.segs.length?Math.max(6,Math.ceil(G.bw+2)):12;ul.x=G.segs.length?G.mnx-1:0;ul.y=G.segs.length?G.mny-1:0;ul.o=60}syncUl();saveUnder();drawPlan();build3D()}
 function startCal(){if(!under){toast('Primero sube la foto del plano');return}cal={pts:[]};showPlanPane();
  VB={x:ul.x-1,y:ul.y-1,w:ul.w+2,h:(ul.w+2)*((plan.clientHeight||500)/(plan.clientWidth||600))};if(VB.h<ul.w*ul.ar+2){VB.h=ul.w*ul.ar+2;VB.w=VB.h*((plan.clientWidth||600)/(plan.clientHeight||500))}
  $('#hint').innerHTML='<b>Medir escala:</b> en el plano, toca los dos extremos de una medida que conozcas (por ejemplo, el largo de un muro o de la casa). Luego escribes cuánto mide.';renderSub();drawPlan();$('#stage').scrollIntoView({block:'start'})}
@@ -1162,7 +1173,7 @@ $('#bWv').addEventListener('click',()=>{const ks=Object.keys(WVN);S.wv=ks[(ks.in
 (()=>{let seen=false;try{seen=!!localStorage.getItem('casas-gest')}catch(e){}if(touchy&&!seen){$('#gest').classList.remove('hide');setTimeout(()=>$('#gest').classList.add('hide'),15000)}
  $('#bGestX').addEventListener('click',()=>{$('#gest').classList.add('hide');try{localStorage.setItem('casas-gest','1')}catch(e){}})})();
 
-const APPV=15;$('#vtag').textContent='v'+APPV;
+const APPV=16;$('#vtag').textContent='v'+APPV;
 (()=>{const el=$('#appv');let t=`Versión ${APPV} del Constructor de casas.`;const A=window.AndroidApp;
  el.innerHTML=t+(A&&A.update?' <button class="b" id="bUpd">Buscar actualización</button>':'')+' <button class="b" id="bTut">Ver tutorial</button>';$('#bTut').addEventListener('click',()=>{$('#sheet').classList.add('hide');tutStart()});if(A&&A.update)$('#bUpd').addEventListener('click',()=>{toast('Buscando actualización…');A.update()})})();
 
@@ -1187,9 +1198,9 @@ const TUT=[
  ['tool','mueble','8. Muebles','Elige la categoría y el mueble, y tócalo sobre el piso. En <b>Jardín</b> tienes pasto, flores, cercos, árboles, huerta y más para afuera. Arrástralo para moverlo y usa <b>↻ Girar</b>.'],
  ['tool','pintar','9. Pintar','Elige un color y toca una habitación, la fachada, un mueble, una puerta o una ventana. Con <b>Piso</b> cambias el piso de toda una habitación o <b>por cuadros</b>, arrastrando el dedo (por ejemplo cerámica en la cocina y madera en el living).'],
  ['tool','techo','10. Techo','Elige la forma, el material, la <b>inclinación</b> y el color. Puedes girar el techo, hacer que siga la forma de la casa y agregar chimenea, tragaluces y canaletas.'],
- ['tool','tierra','11. Terreno y exterior','Sube o baja la tierra con el dedo. Abajo agregas <b>vereda</b>, <b>levantas la casa con hormigón</b>, dibujas <b>caminos</b>, giras la casa y eliges el lugar en el cerro.'],
+ ['tool','tierra','11. Terreno y exterior','Sube o baja la tierra con el dedo. Abajo puedes <b>hacer hoyos</b> y <b>rellenarlos con cemento</b>, agregar <b>vereda</b>, <b>levantas la casa con hormigón</b>, dibujas <b>caminos</b>, giras la casa y eliges el lugar en el cerro.'],
  ['#bWv',null,'Ver por dentro','Este botón cambia los muros: con techo, altos, recortados o bajos, para ver el interior.'],
- ['#bMat',null,'Materiales','Aquí ves la lista de materiales, cuánto necesitas de cada cosa y un <b>costo estimado</b> con precios que puedes cambiar. Se calcula solo con todo lo que dibujas.'],
+ ['#bMat',null,'Materiales y costo','Abajo a la izquierda ves la versión, los sacos de cemento y el costo. Tócalo para ver la lista de materiales, cuánto necesitas de cada cosa y un <b>costo estimado</b> con precios que puedes cambiar. Se calcula solo con todo lo que dibujas.'],
  ['#bMenu',null,'Menú','En el Menú eliges el terreno (ciudad, campo, playa, desierto o cerro), altura, pisos y tipo de muro. También puedes <b>subir una foto de tu plano</b> para que la casa se arme sola, y guardar o abrir proyectos.'],
  ['#bUndo',null,'Deshacer','Si te equivocas, toca ↶ para deshacer. Con ⛶ en la vista 3D pasas a pantalla completa.'],
  [null,null,'¡Listo!','Ya sabes lo principal. Empieza con <b>Habitación</b> y arrastra sobre el suelo.']];
@@ -1210,6 +1221,38 @@ function tutShow(){const [tg,tl,ti,tx]=TUT[tutI],el=$('#tut'),hl=el.querySelecto
   const H=innerHeight,mid=r?(r.top+r.bottom)/2:H/2;cd.style.top=cd.style.bottom='';
   if(!r)cd.style.top=Math.max(16,(H-cd.offsetHeight)/2)+'px';else if(mid>H*0.5)cd.style.top=Math.max(12,Math.min(r.top-cd.offsetHeight-16,H*0.12))+'px';else cd.style.top=Math.min(H-cd.offsetHeight-12,r.bottom+16)+'px'})}
 (()=>{let seen=false;try{seen=!!localStorage.getItem('casas-tut')}catch(e){}if(!seen)setTimeout(()=>{if(tutI<0&&$('#sheet').classList.contains('hide'))tutStart()},900)})();
+
+/* ---------- plano visible / oculto ---------- */
+function updPl(){const b=$('#bPl');b.classList.toggle('hide',!under);b.textContent='Plano: '+(ul.hid?'oculto':'visible');b.setAttribute('aria-pressed',String(!ul.hid));b.classList.toggle('on',!ul.hid&&!!under)}
+$('#bPl').addEventListener('click',()=>{ul.hid=!ul.hid;saveUnder();updPl();drawPlan();build3D();toast(ul.hid?'Plano oculto':'Plano visible')});
+setInterval(()=>{const b=$('#bPl');if(b.classList.contains('hide')===!!under)updPl()},1500);updPl();
+
+/* ---------- sonidos (generados, sin archivos) ---------- */
+let AC=null,amb=null,sndOn=false;
+function acx(){if(!AC){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;AC=new C()}if(AC.state==='suspended')AC.resume();return AC}
+function noiseBuf(a){const b=a.createBuffer(1,a.sampleRate*2,a.sampleRate),d=b.getChannelData(0);let l=0;for(let i=0;i<d.length;i++){const w=Math.random()*2-1;l=(l+0.02*w)/1.02;d[i]=l*3.5}return b}
+function sfx(k){if(!sndOn)return;const a=acx();if(!a)return;const t=a.currentTime,g=a.createGain();g.connect(a.destination);
+ if(k==='build'||k==='dig'||k==='cem'){const o=a.createOscillator();o.type=k==='build'?'triangle':'sine';o.frequency.setValueAtTime(k==='build'?160:k==='cem'?90:120,t);o.frequency.exponentialRampToValueAtTime(50,t+0.18);g.gain.setValueAtTime(k==='dig'?0.12:0.25,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.22);o.connect(g);o.start(t);o.stop(t+0.25);
+  if(k!=='build'){const n=a.createBufferSource();n.buffer=amb&&amb.nb||noiseBuf(a);const f=a.createBiquadFilter();f.type='bandpass';f.frequency.value=k==='cem'?500:900;const g2=a.createGain();g2.gain.setValueAtTime(0.18,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.25);n.connect(f);f.connect(g2);g2.connect(a.destination);n.start(t);n.stop(t+0.3)}}
+ else if(k==='del'){const o=a.createOscillator();o.type='square';o.frequency.setValueAtTime(420,t);o.frequency.exponentialRampToValueAtTime(90,t+0.15);g.gain.setValueAtTime(0.07,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.17);o.connect(g);o.start(t);o.stop(t+0.2)}
+ else if(k==='tap'){const o=a.createOscillator();o.type='sine';o.frequency.value=880;g.gain.setValueAtTime(0.05,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.06);o.connect(g);o.start(t);o.stop(t+0.07)}
+ else if(k==='paint'){const n=a.createBufferSource();n.buffer=amb&&amb.nb||noiseBuf(a);const f=a.createBiquadFilter();f.type='highpass';f.frequency.value=2500;g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(0.12,t+0.05);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);n.connect(f);f.connect(g);n.start(t);n.stop(t+0.32)}}
+function ambStart(){const a=acx();if(!a||amb)return;const nb=noiseBuf(a),mg=a.createGain();mg.gain.value=0;mg.connect(a.destination);mg.gain.linearRampToValueAtTime(1,a.currentTime+1.5);
+ const wind=a.createBufferSource();wind.buffer=nb;wind.loop=true;const wf=a.createBiquadFilter();wf.type='lowpass';wf.frequency.value=400;const wg=a.createGain();wg.gain.value=0.05;wind.connect(wf);wf.connect(wg);wg.connect(mg);wind.start();
+ const lfo=a.createOscillator();lfo.frequency.value=0.08;const lg=a.createGain();lg.gain.value=0.03;lfo.connect(lg);lg.connect(wg.gain);lfo.start();
+ amb={mg,nb,wg,wf,timer:null};
+ const bird=()=>{if(!amb)return;const ter=S.ter,t=a.currentTime;
+  if(ter==='playa'){const n=a.createBufferSource();n.buffer=nb;const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=700;const g=a.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(0.22,t+1.6);g.gain.linearRampToValueAtTime(0.0001,t+4);n.connect(f);f.connect(g);g.connect(mg);n.start(t);n.stop(t+4.2);amb.timer=setTimeout(bird,3500+Math.random()*2500);return}
+  if(ter==='ciudad'&&Math.random()<0.4){const n=a.createBufferSource();n.buffer=nb;const f=a.createBiquadFilter();f.type='bandpass';f.frequency.value=180;const g=a.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(0.25,t+1.2);g.gain.linearRampToValueAtTime(0.0001,t+3);n.connect(f);f.connect(g);g.connect(mg);n.start(t);n.stop(t+3.1)}
+  if(ter!=='desierto'){const n=2+Math.floor(Math.random()*4),base=2200+Math.random()*1800;for(let i=0;i<n;i++){const o=a.createOscillator(),g=a.createGain(),t0=t+i*0.13;o.type='sine';o.frequency.setValueAtTime(base,t0);o.frequency.exponentialRampToValueAtTime(base*(1.25+Math.random()*0.4),t0+0.05);o.frequency.exponentialRampToValueAtTime(base*0.9,t0+0.1);g.gain.setValueAtTime(0.0001,t0);g.gain.linearRampToValueAtTime(0.035,t0+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t0+0.11);o.connect(g);g.connect(mg);o.start(t0);o.stop(t0+0.12)}}
+  amb.wg.gain.value=ter==='desierto'||ter==='cerro'?0.09:0.05;amb.timer=setTimeout(bird,(ter==='ciudad'?5000:2500)+Math.random()*4000)};
+ amb.timer=setTimeout(bird,800)}
+function ambStop(){if(!amb)return;const a=AC,m=amb;clearTimeout(m.timer);amb=null;try{m.mg.gain.linearRampToValueAtTime(0,a.currentTime+0.4);setTimeout(()=>m.mg.disconnect(),600)}catch(e){}}
+function setSnd(on){sndOn=on;S.snd=on?1:0;save();$('#bSnd').textContent=on?'🔊':'🔇';$('#bSnd').setAttribute('aria-label',on?'Quitar sonido':'Activar sonido');if(on)ambStart();else ambStop()}
+$('#bSnd').addEventListener('click',()=>{setSnd(!sndOn);toast(sndOn?'Sonido del ambiente activado':'Sonido apagado')});
+$('#bSnd').textContent=S.snd?'🔊':'🔇';
+(()=>{const go=e=>{removeEventListener('pointerdown',go,true);if(e.target.closest&&e.target.closest('#bSnd'))return;if(S.snd&&!sndOn)setSnd(true)};addEventListener('pointerdown',go,true)})();
+document.addEventListener('visibilitychange',()=>{if(!AC)return;if(document.hidden)AC.suspend();else if(sndOn)AC.resume()});
 
 /* ---------- casa automática desde la foto del plano ---------- */
 // Reconoce muros (líneas gruesas rectas), puertas (huecos) y ventanas (huecos con líneas finas) en el navegador.
@@ -1581,6 +1624,8 @@ function build3D(){if(!R)return;try{
  {const by={};for(const[key,kd]of Object.entries(S.ftile||{})){if(!FLOOR[kd])continue;const c=tileC(key);if(!g.rooms.some(f=>g.inPoly(c.cx,c.cy,f.pts)))continue;(by[kd]=by[kd]||[]).push(c)}
   for(const[kd,cs]of Object.entries(by)){const V=[],UV=[],I=[];cs.forEach((c,n)=>{const y=y0+0.024,x1=c.x,x2=c.x+TS,z1=c.y,z2=c.y+TS;V.push(x1,y,z1,x2,y,z1,x2,y,z2,x1,y,z2);UV.push(x1,-z1,x2,-z1,x2,-z2,x1,-z2);const b=n*4;I.push(b,b+2,b+1,b,b+3,b+2)});
    const ge=new THREE.BufferGeometry();ge.setAttribute('position',new THREE.Float32BufferAttribute(V,3));ge.setAttribute('uv',new THREE.Float32BufferAttribute(UV,2));ge.setIndex(I);ge.computeVertexNormals();const m=new THREE.Mesh(ge,floorMat(kd));m.receiveShadow=true;root.add(m)}}
+ {const ks=Object.keys(S.conc||{});if(ks.length){const V=[],I=[];ks.forEach((k,n)=>{const[i,j]=k.split(',').map(Number),x=TG.x0+i,z=TG.z0+j;[[-0.5,-0.5],[0.5,-0.5],[0.5,0.5],[-0.5,0.5]].forEach(([a,b])=>V.push(x+a,effH(x+a,z+b)+0.03,z+b));const q=n*4;I.push(q,q+2,q+1,q,q+3,q+2)});
+  const ge=new THREE.BufferGeometry();ge.setAttribute('position',new THREE.Float32BufferAttribute(V,3));ge.setIndex(I);ge.computeVertexNormals();const m=new THREE.Mesh(ge,mat(0xaeaba3,{side:THREE.DoubleSide,roughness:0.8}));m.receiveShadow=true;root.add(m)}}
  {const vm=mc(0xc4c1b9),pm=mc(0xb9b6ae),v=+S.vered||0;
   if(v&&g.rooms.length)for(const r of footRects(g))wbox(r.w+2*v,0.42,r.d+2*v,r.x+r.w/2,g.pad-0.16,r.y+r.d/2,vm);
   for(const q of S.paths||[]){const L=Math.hypot(q.x2-q.x1,q.y2-q.y1);if(L<0.1)continue;const ux=(q.x2-q.x1)/L,uy=(q.y2-q.y1)/L,nx=-uy*q.w/2,ny=ux*q.w/2,n=Math.max(1,Math.ceil(L/0.5)),V=[],I=[];
@@ -1591,7 +1636,7 @@ function build3D(){if(!R)return;try{
    for(const o of g.ops){if(o.t!=='puerta'||!o.ext)continue;const s=o.s,L=s.len,ux=(s.x2-s.x1)/L,uy=(s.y2-s.y1)/L;let nx=-uy,ny=ux;if(roomAt({x:o.cx+nx*0.4,y:o.cy+ny*0.4})){nx=-nx;ny=-ny}
     const grp=new THREE.Group();grp.position.set(o.cx,g.pad,o.cy);grp.rotation.y=-Math.atan2(ny,nx);root.add(grp);
     for(let k=0;k<ns;k++){const top=y0-g.pad-k*rs-0.01;wbox(0.3,top+0.3,o.w+0.3,0.1+k*0.3+0.15,top/2-0.15,0,cm,grp)}}}}
- if(under&&ul.ar){if(!UT||UT.src!==under){UT=new THREE.TextureLoader().load(under,()=>draw());UT.src=under}const ph=ul.w*ul.ar,nx=clamp(Math.ceil(ul.w*2),2,160),nz=clamp(Math.ceil(ph*2),2,160),pg=new THREE.PlaneGeometry(ul.w,ph,nx,nz);pg.rotateX(-Math.PI/2);
+ if(under&&ul.ar&&!ul.hid){if(!UT||UT.src!==under){UT=new THREE.TextureLoader().load(under,()=>draw());UT.src=under}const ph=ul.w*ul.ar,nx=clamp(Math.ceil(ul.w*2),2,160),nz=clamp(Math.ceil(ph*2),2,160),pg=new THREE.PlaneGeometry(ul.w,ph,nx,nz);pg.rotateX(-Math.PI/2);
   // el plano se apoya sobre el terreno (en el cerro sigue la pendiente y no queda enterrado)
   const pp=pg.attributes.position,cx0=ul.x+ul.w/2,cz0=ul.y+ph/2;for(let i=0;i<pp.count;i++){const x=pp.getX(i)+cx0,z=pp.getZ(i)+cz0;let h=y0;try{const e=effH(x,z);h=g.rb&&padDist(x,z,g.rb)<=0?y0:Math.max(e,-50)}catch(_){}pp.setY(i,h+0.05)}pg.computeVertexNormals();
   const pm=new THREE.Mesh(pg,new THREE.MeshBasicMaterial({map:UT,transparent:true,opacity:Math.min(0.9,ul.o/100),depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));pm.position.set(cx0,0,cz0);pm.renderOrder=2;root.add(pm)}
