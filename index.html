@@ -472,6 +472,7 @@ const FURN={
  pino:{n:'Pino',s:'',c:'Jardín',w:1.4,d:1.4,wall:0,pc:'#2f6b3a'},fuente:{n:'Fuente de agua',s:'Fuente',c:'Jardín',w:1.2,d:1.2,wall:0,pc:'#7fc4e0'},
  pergola:{n:'Pérgola',s:'Pérgola',c:'Jardín',w:3.0,d:3.0,wall:0,pc:'#b48a62'},rocas:{n:'Rocas decorativas',s:'',c:'Jardín',w:1.2,d:0.8,wall:0,pc:'#8d8a82'},
  cercom:{n:'Cerco de madera (2 m)',s:'',c:'Jardín',w:2.0,d:0.1,wall:0,pc:'#b48a62'},columpio:{n:'Columpio',s:'',c:'Jardín',w:2.2,d:1.2,wall:0,pc:'#c8a97e'},
+ quincho:{n:'Quincho techado 4×3 m',s:'Quincho',c:'Exterior',w:4,d:3,wall:0,pc:'#b48a62'},bodega:{n:'Bodega de jardín 2,5×2 m',s:'Bodega',c:'Exterior',w:2.5,d:2,wall:0,pc:'#9aa3a8'},carport:{n:'Estacionamiento techado',s:'Estacionam.',c:'Exterior',w:3,d:5.5,wall:0,pc:'#8a99a8'},porton:{n:'Portón de reja 4 m',s:'',c:'Exterior',w:4,d:0.12,wall:0,pc:'#3a3c40'},poste:{n:'Poste de luz exterior',s:'',c:'Exterior',w:0.3,d:0.3,wall:0,pc:'#3a3c40'},lenera:{n:'Leñera',s:'',c:'Exterior',w:1.6,d:0.8,wall:0,pc:'#9b7650'},basurero:{n:'Basureros con tapa',s:'',c:'Exterior',w:1.2,d:0.6,wall:0,pc:'#3d7a4a'},
  macetag:{n:'Macetero grande',s:'',c:'Jardín',w:0.9,d:0.9,wall:0,pc:'#c97b5b'},farol:{n:'Farol de jardín',s:'',c:'Jardín',w:0.3,d:0.3,wall:0,pc:'#3a3c40'}};
 const CATS=['Dormitorio','Living','Cocina','Baño','Lavado','Jardín','Exterior','Estructura'];
 const RW=(x,y,w,h)=>[[x,y,x+w,y],[x+w,y,x+w,y+h],[x+w,y+h,x,y+h],[x,y+h,x,y]].map(a=>({id:uid(),x1:a[0],y1:a[1],x2:a[2],y2:a[3],m:wallM()}));
@@ -521,7 +522,7 @@ const DOORM={madera:['Madera',0x7a4f2c,1],mdf:['MDF pintado',0xe2d6c0,0.7],pvc:[
 const WINM={alum:['Aluminio',0x34383c,1],alumb:['Aluminio blanco',0xe8e8e4,1.05],pvc:['PVC',0xf4f4f0,1.35],madera:['Madera',0x8b5a33,1.5]};
 const PATHM={hormigon:['Hormigón',0xb9b6ae],adoquin:['Adoquín',0x9a8478],gravilla:['Gravilla o maicillo',0xcdbf9e],laja:['Piedra laja',0x8f8a80],deck:['Deck de madera',0x9b6d45],pastob:['Pasto con bloques',0x7fa85a]};
 const FURNM=[['Original',null],['Madera clara',0xd2b48c],['Madera',0x9b7650],['Nogal',0x5a3c28],['Melamina blanca',0xf2f0ea],['Metal negro',0x2a2b2d],['Tela gris',0x8f9093],['Tela azul',0x3f6fa8],['Tela verde',0x6f9a8a],['Cuero café',0x6e4b32]];
-const DEF={bank:0,region:'rm',baseV:0,veredM:'hormigon',conc:{},snd:1,prices:{},ftile:{},vered:0,zoc:0,paths:[],terR:0,terX:0,terZ:0,roofF:1,roofX:{},roofP:20,roofO:0,roofC:null,ter:'ciudad',pisos:1,H:2.4,muro:'ladrillo',techo:'zinc',roofMode:'dos',merma:10,env:true,snap:0.25,fach:'visto',wv:'corte',padOff:0};
+const DEF={slabs:[],solera:0,bank:0,region:'rm',baseV:0,veredM:'hormigon',conc:{},snd:1,prices:{},ftile:{},vered:0,zoc:0,paths:[],terR:0,terX:0,terZ:0,roofF:1,roofX:{},roofP:20,roofO:0,roofC:null,ter:'ciudad',pisos:1,H:2.4,muro:'ladrillo',techo:'zinc',roofMode:'dos',merma:10,env:true,snap:0.25,fach:'visto',wv:'corte',padOff:0};
 let S,G,VB,tool='cuarto',sel=null,act=null,prev=null,ghost=null,undo=[],photo=null,under=null,DL=null,M=null;
 let cal=null,UT=null;
 let doorK='simple',winK='estandar',cat='Dormitorio',fk='cama2',frot=0,paint='salvia',floorK='madera',tmode='subir',brush=1.5,pathW=1.2,fmode='cuarto',fsize=0.5;
@@ -530,7 +531,7 @@ const fix=o=>{o.furn=Array.isArray(o.furn)?o.furn:[];o.dig=o.dig&&typeof o.dig==
 try{const j=JSON.parse(localStorage.getItem('casas-v2'));if(j&&Array.isArray(j.walls))S=fix(Object.assign({},DEF,j))}catch(e){}
 if(!S)S=fix(Object.assign({},DEF,TPL.dos()));
 const save=()=>{try{localStorage.setItem('casas-v2',JSON.stringify(S))}catch(e){}};
-const snap=()=>{undo.push(JSON.stringify({conc:S.conc,ftile:S.ftile,paths:S.paths,vered:S.vered,zoc:S.zoc,baseV:S.baseV,bank:S.bank,walls:S.walls,ops:S.ops,labels:S.labels,furn:S.furn,fach:S.fach,dig:S.dig,padOff:S.padOff,terR:S.terR,terX:S.terX,terZ:S.terZ}));if(undo.length>60)undo.shift();$('#bUndo').disabled=false};
+const snap=()=>{undo.push(JSON.stringify({conc:S.conc,ftile:S.ftile,paths:S.paths,vered:S.vered,zoc:S.zoc,baseV:S.baseV,bank:S.bank,slabs:S.slabs,solera:S.solera,walls:S.walls,ops:S.ops,labels:S.labels,furn:S.furn,fach:S.fach,dig:S.dig,padOff:S.padOff,terR:S.terR,terX:S.terX,terZ:S.terZ}));if(undo.length>60)undo.shift();$('#bUndo').disabled=false};
 const toast=(m,ms)=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.k);toast.k=setTimeout(()=>t.classList.remove('on'),ms||2400)};
 const overlaps=()=>null;
 
@@ -555,6 +556,8 @@ function fundVar(g){if(!g||!g.rb||S.ter==='playa')return null;let vol=0,L=0,mn=1
  return L?{vol,L,mn:mn>1e8?0:mn,mx,np,pv}:null}
 /* precios aproximados por región de Chile (factor sobre Santiago) */
 const REG={ap:['Arica y Parinacota',1.12],ta:['Tarapacá',1.12],an:['Antofagasta',1.15],at:['Atacama',1.08],co:['Coquimbo',1.03],va:['Valparaíso',1.02],rm:['Metropolitana (Santiago)',1],oh:["O'Higgins",0.98],ma:['Maule',0.97],nu:['Ñuble',0.98],bi:['Biobío',0.99],ar:['La Araucanía',1.01],lr:['Los Ríos',1.04],ll:['Los Lagos',1.07],ay:['Aysén',1.25],mg:['Magallanes',1.3]};
+/* radier o patio: losa plana a la altura del punto más alto del suelo bajo ella */
+function slabLv(q){let mx=-1e9,mn=1e9,sum=0,n=0;const nx=Math.max(1,Math.ceil(q.w)),nz=Math.max(1,Math.ceil(q.d));for(let i=0;i<=nx;i++)for(let j=0;j<=nz;j++){const h=effH(q.x+q.w*i/nx,q.y+q.d*j/nz);mx=Math.max(mx,h);mn=Math.min(mn,h);sum+=h;n++}return{top:mx+0.1,bot:mn,avg:sum/n}}
 const RF=()=>(REG[S.region]||REG.rm)[1];
 function regOf(la,lo){if(la>-17||la<-56.5||lo<-76.5||lo>-66)return null;if(la>-19.2)return'ap';if(la>-21.6)return'ta';if(la>-26.1)return'an';if(la>-29.3)return'at';if(la>-32.25)return'co';if(la>-32.9)return'va';if(la>-33.95)return lo<-71.3?'va':'rm';if(la>-34.3)return lo<-71.0?'oh':'rm';if(la>-35.0)return'oh';if(la>-36.0)return'ma';if(la>-37.2)return lo<-72.6?'bi':'nu';if(la>-38.5)return'bi';if(la>-39.5)return'ar';if(la>-40.7)return'lr';if(la>-44.0)return'll';if(la>-49.0)return'ay';return'mg'}
 function terrain(g){
@@ -740,6 +743,8 @@ function calc(){
    else if(nm==='deck'){add(EX,'Deck de pino impregnado',m1(a*f),'m²',what);add(EX,'Vigas 2"×4" impregnadas × 3,2 m',up(a/0.5/3.2*f),'u','Cada 50 cm')}
    else if(nm==='pastob'){add(EX,'Bloque pasto (huella)',m1(a*f),'m²',what);add(EX,'Tierra de hoja',m1(a*0.05*f),'m³')}};
   if(vw)surf(S.veredM,g.ext*vw+4*vw*vw,'la vereda');
+  for(const q of S.slabs||[]){const a=q.w*q.d,lv=slabLv(q),rel=Math.max(0,lv.top-0.1-lv.avg)*a;surf(q.m,a,'el radier o patio');if(rel>0.05)add(EX,'Relleno compactado bajo el radier o patio',m1(rel*f),'m³','Para dejarlo plano en el lado bajo')}
+  if(S.solera&&(S.paths||[]).length){const n=up((S.paths||[]).reduce((t,p)=>t+2*Math.hypot(p.x2-p.x1,p.y2-p.y1),0));add(EX,'Solerilla de hormigón 1 m',n,'u','En los dos bordes de los caminos');mort+=n*0.01}
   const ps=S.paths||[];if(ps.length){const by={};for(const p of ps){const m=PATHM[p.m]?p.m:'hormigon',k=m+(p.w>=2.5?'+':'');by[k]=(by[k]||0)+Math.hypot(p.x2-p.x1,p.y2-p.y1)*p.w}
    for(const k of Object.keys(by))surf(k.replace('+',''),by[k],'los caminos',k.endsWith('+'));if(ps.some(p=>!p.m||p.m==='hormigon'))add(EX,'Moldaje de borde (tablas 1"×4")',up(ps.reduce((t,p)=>t+2*Math.hypot(p.x2-p.x1,p.y2-p.y1),0)/3.2*f),'u')}
   if(zh){const per=g.ext,v=per*zh*0.2,nd=g.ops.filter(o=>o.t==='puerta'&&o.ext).length,ns=Math.ceil(zh/0.18),ve=nd*1.2*0.28*ns*zh/2;hc+=v+ve;E+=per;
@@ -762,7 +767,7 @@ function calc(){
 }
 
 /* ---------- precios estimados (CLP, editables) ---------- */
-const PR=[[/^Adoquín/,16000],[/^Arena para cama/,25000],[/^Gravilla/,25000],[/^Malla antimaleza/,900],[/^Piedra laja/,22000],[/^Deck de pino/,35000],[/^Vigas 2"×4"/,4500],[/^Bloque pasto/,18000],[/^Tierra de hoja/,30000],[/^Hormigón H25/,110000],[/^Cemento/,4800],[/^Arena/,25000],[/^Grava/,28000],[/^Bolón/,22000],[/^Ripio/,22000],[/^Fierro estriado/,9500],[/^Fierro liso/,1800],[/^Alambre/,2500],[/^Malla Acma/,32000],[/^Malla acma/,45000],
+const PR=[[/^Solerilla/,3500],[/^Quincho/,2900000],[/^Bodega de jardín/,650000],[/^Estacionamiento techado/,1400000],[/^Portón de reja/,480000],[/^Poste de luz/,95000],[/^Leñera/,180000],[/^Basureros/,60000],[/^Adoquín/,16000],[/^Arena para cama/,25000],[/^Gravilla/,25000],[/^Malla antimaleza/,900],[/^Piedra laja/,22000],[/^Deck de pino/,35000],[/^Vigas 2"×4"/,4500],[/^Bloque pasto/,18000],[/^Tierra de hoja/,30000],[/^Hormigón H25/,110000],[/^Cemento/,4800],[/^Arena/,25000],[/^Grava/,28000],[/^Bolón/,22000],[/^Ripio/,22000],[/^Fierro estriado/,9500],[/^Fierro liso/,1800],[/^Alambre/,2500],[/^Malla Acma/,32000],[/^Malla acma/,45000],
  [/^Polietileno/,600],[/^Ladrillo/,380],[/^Bloque de hormigón/,750],[/^Piedra canteada/,60000],[/^Moldaje: tablas/,6500],[/^Moldaje fenólico/,45000],[/^Moldaje de borde/,2500],[/^Desmoldante/,4000],
  [/^Pino 2"×4"/,3200],[/^OSB 11/,11500],[/^OSB 18/,19000],[/^Yeso-cartón/,6800],[/^Lana de vidrio 50/,24000],[/^Lana de vidrio 100/,26000],[/^Barrera de humedad/,22000],[/^Fieltro/,22000],[/^Revestimiento fibrocemento/,16000],[/^Clavos/,3000],
  [/^Montante Metalcon/,7500],[/^Canal Metalcon/,6500],[/^Tornillos autoperforantes/,6000],[/^Panel SIP/,85000],[/^Espuma de poliuretano/,6000],
@@ -875,7 +880,8 @@ function planSVG(ex){
   if(G.cu)s+=`<path d="${G.cu}" fill="#a0683a" fill-opacity=".22"/>`;if(G.fi)s+=`<path d="${G.fi}" fill="#5f8f3f" fill-opacity=".22"/>`;
   if(G.ct)s+=`<path d="${G.ct}" fill="none" stroke="#9a7b4f" stroke-width="${vb.w/450}" opacity=".7"/>`;
   if(under&&!ul.hid)s+=`<image href="${under}" x="${ul.x}" y="${ul.y}" width="${ul.w}" height="${ul.w*(ul.ar||1)}" opacity="${ul.o/100}" preserveAspectRatio="none"/>`}
- for(const q of S.paths||[])s+=`<line x1="${q.x1}" y1="${q.y1}" x2="${q.x2}" y2="${q.y2}" stroke="#b9b6ae" stroke-width="${q.w}" stroke-linecap="square"/>`;
+ for(const q of S.slabs||[]){const on=sel&&sel.k==='slab'&&sel.id===q.id;s+=`<rect x="${q.x}" y="${q.y}" width="${q.w}" height="${q.d}" fill="#c9c6be" stroke="${on?C.acc:'#9d9a93'}" stroke-width="${on?0.12:0.05}"/>`}
+ for(const q of S.paths||[])s+=`<line x1="${q.x1}" y1="${q.y1}" x2="${q.x2}" y2="${q.y2}" stroke="#b9b6ae" stroke-width="${q.w}" stroke-linecap="round"/>`;
  if(+S.vered&&G.rooms.length){const v=+S.vered;for(const r of footRects(G))s+=`<rect x="${r.x-v}" y="${r.y-v}" width="${r.w+2*v}" height="${r.d+2*v}" fill="#c9c6be"/>`}
  const selRoom=!ex&&sel&&sel.k==='room'?roomAt(sel):null;
  for(const f of G.rooms){const fc=!ex&&f.fp&&FLOOR[f.fp]?FLOOR[f.fp][1]:C.room;
@@ -906,6 +912,7 @@ function planSVG(ex){
   else if(g.k==='op'){const w=g.w,ux=(w.x2-w.x1)/g.L,uy=(w.y2-w.y1)/g.L,a=g.pos-g.wd/2,b=g.pos+g.wd/2;s+=`<line x1="${w.x1+ux*a}" y1="${w.y1+uy*a}" x2="${w.x1+ux*b}" y2="${w.y1+uy*b}" stroke="${C.acc}" stroke-width="0.24" opacity=".7"/>`}
   else if(g.k==='cut'){const w=g.w,ux=(w.x2-w.x1)/g.L,uy=(w.y2-w.y1)/g.L;s+=`<line x1="${w.x1+ux*g.a}" y1="${w.y1+uy*g.a}" x2="${w.x1+ux*g.b}" y2="${w.y1+uy*g.b}" stroke="#d12f2f" stroke-width="0.3" opacity=".8"/><text x="${w.x1+ux*(g.a+g.b)/2}" y="${w.y1+uy*(g.a+g.b)/2-fs*1.2}" font-size="${fs*1.4}" font-weight="700" fill="#d12f2f" text-anchor="middle" stroke="${C.bg}" stroke-width="${fs*0.25}" paint-order="stroke">${fm(g.b-g.a)} m</text>`}
   else if(g.k==='brush')s+=`<circle cx="${g.x}" cy="${g.y}" r="${brush}" fill="${C.acc}" fill-opacity=".12" stroke="${C.acc}" stroke-width="${fs*0.12}"/>`}
+ if(!ex&&prev&&prev.k==='slab'){const p=prev,x=Math.min(p.x1,p.x2),y=Math.min(p.y1,p.y2),w=Math.abs(p.x2-p.x1),d=Math.abs(p.y2-p.y1);s+=`<rect x="${x}" y="${y}" width="${w}" height="${d}" fill="${C.acc}" opacity=".35"/><text x="${x+w/2}" y="${y-fs*1.3}" font-size="${fs*1.6}" font-weight="700" fill="${C.acc}" text-anchor="middle">${fm(w)} × ${fm(d)} m</text>`}
  if(!ex&&prev&&prev.k==='camino'){const p=prev;s+=`<line x1="${p.x1}" y1="${p.y1}" x2="${p.x2}" y2="${p.y2}" stroke="${C.acc}" stroke-width="${pathW}" opacity=".5"/><text x="${p.x2}" y="${p.y2-fs*1.3}" font-size="${fs*1.6}" font-weight="700" fill="${C.acc}" text-anchor="middle">${fm(Math.hypot(p.x2-p.x1,p.y2-p.y1))} m</text>`}
  else if(!ex&&prev){const p=prev;
   if(p.k==='muro'){const L=Math.hypot(p.x2-p.x1,p.y2-p.y1);s+=`<line x1="${p.x1}" y1="${p.y1}" x2="${p.x2}" y2="${p.y2}" stroke="${C.acc}" stroke-width="0.2" stroke-linecap="square" opacity=".8"/><circle cx="${p.x1}" cy="${p.y1}" r="${fs*0.35}" fill="${C.acc}"/>`;
@@ -961,7 +968,7 @@ function tDown(p,pk,src){if(!p)return;ghost=null;hover.k='';const t=tool;
  if(t==='elegir'&&multiW){if(pk.wall){const id=pk.wall.w.id,ids=sel&&sel.k==='walls'?sel.ids.slice():[],dp=sel&&sel.dup;const i=ids.indexOf(id);if(i>=0)ids.splice(i,1);else ids.push(id);sel=ids.length?{k:'walls',ids,dup:dp}:null;sfx('tap');refreshSel()}else toast('Toca los muros que quieras agregar');return}
  if(t==='elegir'){if(pk.furn)return grabF(pk.furn,p);
   if(pk.op){snap();sel={k:'op',id:pk.op.id};act={k:'mop',id:pk.op.id,moved:false,src};refreshSel();return}
-  if(pk.roof&&!pk.wall&&!pk.room)sel={k:'roof'};else if(pk.wall)sel={k:'wall',id:pk.wall.w.id,t:pk.wall.t};else if(pk.room)sel={k:'room',x:pk.room.c[0],y:pk.room.c[1]};else{const q=pk.path||(pk.p&&pathAt(pk.p));if(q)sel={k:'path',id:q.id};else if(pk.vered||(pk.p&&veredAt(pk.p)))sel={k:'vered'};else sel=null}refreshSel();return}
+  if(pk.roof&&!pk.wall&&!pk.room)sel={k:'roof'};else if(pk.wall)sel={k:'wall',id:pk.wall.w.id,t:pk.wall.t};else if(pk.room)sel={k:'room',x:pk.room.c[0],y:pk.room.c[1]};else{const q=pk.path||(pk.p&&pathAt(pk.p)),sl=!q&&(pk.slab||(pk.p&&slabAt(pk.p)));if(sl)sel={k:'slab',id:sl.id};else if(q)sel={k:'path',id:q.id};else if(pk.vered||(pk.p&&veredAt(pk.p)))sel={k:'vered'};else sel=null}refreshSel();return}
  if(t==='borrar'){sfx('del');if(pk.furn){snap();S.furn=S.furn.filter(q=>q!==pk.furn);sel=null;commit(true);return}
   if(pk.op){snap();S.ops=S.ops.filter(q=>q.id!==pk.op.id);sel=null;commit(true);return}
   if(pk.wall){const w=pk.wall.w,L=pk.wall.L,t=pk.wall.t;
@@ -979,10 +986,12 @@ function tDown(p,pk,src){if(!p)return;ghost=null;hover.k='';const t=tool;
  if(t==='piso'&&fmode==='cuadro'){snap();act={k:'ftile',last:''};tilePaint(p,act);return}
  if(t==='piso'){if(pk.room){snap();setRoomProp(pk.room,'fp',floorK);commit(true);toast('Piso de '+FLOOR[floorK][0].toLowerCase())}else toast('Toca dentro de una habitación');return}
  if(t==='techo'){toast('Elige abajo la forma y el material del techo');return}
- if(t==='tierra'&&tmode==='camino'){const tp=pk.tp||p,q={x:Math.round(tp.x*10)/10,y:Math.round(tp.y*10)/10};act={k:'path',x1:q.x,y1:q.y,src};prev={k:'camino',x1:q.x,y1:q.y,x2:q.x,y2:q.y};refresh();return}
+ if(t==='tierra'&&tmode==='radier'){const tp=pk.tp||p,q={x:Math.round(tp.x*10)/10,y:Math.round(tp.y*10)/10};act={k:'slab',x1:q.x,y1:q.y,src};prev={k:'slab',x1:q.x,y1:q.y,x2:q.x,y2:q.y};refresh();return}
+ if(t==='tierra'&&tmode==='camino'){const tp=pk.tp||p,q={x:Math.round(tp.x*10)/10,y:Math.round(tp.y*10)/10};{let b=null;for(const r of S.paths||[])for(const[ex,ey]of[[r.x1,r.y1],[r.x2,r.y2]]){const dd=Math.hypot(ex-q.x,ey-q.y);if(dd<Math.max(0.8,r.w*0.7)&&(!b||dd<b.d))b={d:dd,x:ex,y:ey}}if(b){q.x=b.x;q.y=b.y}}act={k:'path',x1:q.x,y1:q.y,src};prev={k:'camino',x1:q.x,y1:q.y,x2:q.x,y2:q.y};refresh();return}
  if(t==='tierra'){const tp=pk.tp||p;snap();act={k:'dig',last:tp,target:effH(tp.x,tp.y),src};brushAt(tp,act)}}
 function tMove(p,src){if(!act||!p)return;const a=act;
  if(a.k==='ftile'){tilePaint(p,a);return}
+ if(a.k==='slab'){const q={x:Math.round(p.x*10)/10,y:Math.round(p.y*10)/10};prev={k:'slab',x1:a.x1,y1:a.y1,x2:q.x,y2:q.y};refresh();return}
  if(a.k==='path'){const q={x:Math.round(p.x*10)/10,y:Math.round(p.y*10)/10};if(prev&&prev.x2===q.x&&prev.y2===q.y)return;prev={k:'camino',x1:a.x1,y1:a.y1,x2:q.x,y2:q.y};refresh();return}
  if(a.k==='muro'||a.k==='cuarto'){let q=snapP(p,stol(src));
   if(a.k==='muro'){const dx=q.x-a.x1,dy=q.y-a.y1;if(Math.abs(dy)<Math.abs(dx)*0.12)q={x:q.x,y:a.y1};else if(Math.abs(dx)<Math.abs(dy)*0.12)q={x:a.x1,y:q.y}}
@@ -997,6 +1006,7 @@ function tMove(p,src){if(!act||!p)return;const a=act;
   const lo=a.moved?Math.min(a.t0,a.t1):a.t0-0.5,hi=a.moved?Math.max(a.t0,a.t1):a.t0+0.5;ghost={k:'cut',w,a:clamp(lo,0,a.L),b:clamp(hi,0,a.L),L:a.L};refresh()}}
 function tUp(){const a=act;act=null;if(!a)return;
  if(a.k==='ftile'){if(a.n)commit(true);else{undo.pop();$('#bUndo').disabled=!undo.length;toast('Toca dentro de una habitación')}return}
+ if(a.k==='slab'){const p=prev;prev=null;const x=Math.min(p.x1,p.x2),y=Math.min(p.y1,p.y2),w=r2(Math.abs(p.x2-p.x1)),d=r2(Math.abs(p.y2-p.y1));if(w>=0.5&&d>=0.5){snap();S.slabs=(S.slabs||[]).concat([{id:uid(),x,y,w,d,m:'hormigon'}]);sfx('cem');commit(true);toast(`Radier de ${fm(w)} × ${fm(d)} m (${nf(w*d,1)} m²). Tócalo con Elegir para cambiar el material`,4500)}else{refresh();toast('Arrastra en diagonal para dibujar el radier')}return}
  if(a.k==='path'){const p=prev;prev=null;if(p&&Math.hypot(p.x2-p.x1,p.y2-p.y1)>=0.5){snap();S.paths=(S.paths||[]).concat([{id:uid(),x1:p.x1,y1:p.y1,x2:p.x2,y2:p.y2,w:pathW}]);commit(true);toast(`Camino de ${fm(Math.hypot(p.x2-p.x1,p.y2-p.y1))} m. Arrastra otra vez para seguirlo`)}else refresh();return}
  if(a.k==='muro'||a.k==='cuarto'){const p=prev;prev=null;
   if(p&&a.k==='muro'){if(Math.hypot(p.x2-p.x1,p.y2-p.y1)>=0.2){snap();sfx('build');const w={id:uid(),x1:p.x1,y1:p.y1,x2:p.x2,y2:p.y2,m:wallM()};S.walls.push(w);sel={k:'wall',id:w.id};commit(true);{const di=dupInfo();if(di.dup.includes(w.id)||di.part.includes(w.id))toast('Ojo: este muro quedó encima de otro. En Elegir → ⚠ Repetidos puedes borrarlo',4500)}return}}
@@ -1020,8 +1030,9 @@ const PT=new Map();
 let multiW=false;
 const selWBtns=()=>{const di=dupInfo(),n=di.dup.length+di.part.length;return (n?`<button class="danger" data-act="wdup">⚠ Repetidos (${n})</button>`:'')+`<span class="lbl">Elegir muros</span><button data-act="wall">Todos</button><button data-act="wext">Exteriores</button><button data-act="wint">Interiores</button><button class="${multiW?'on':''}" data-act="wmulti">${multiW?'✓ ':''}Varios</button>`};
 function pathAt(p){for(const q of [...(S.paths||[])].reverse()){const dx=q.x2-q.x1,dy=q.y2-q.y1,L2=dx*dx+dy*dy;if(!L2)continue;const t=clamp(((p.x-q.x1)*dx+(p.y-q.y1)*dy)/L2,0,1);if(Math.hypot(q.x1+dx*t-p.x,q.y1+dy*t-p.y)<=q.w/2+0.15)return q}return null}
+function slabAt(p){for(const q of [...(S.slabs||[])].reverse())if(p.x>=q.x&&p.x<=q.x+q.w&&p.y>=q.y&&p.y<=q.y+q.d)return q;return null}
 function veredAt(p){const v=+S.vered||0;if(!v||!G.rooms.length||roomAt(p))return false;return footRects(G).some(r=>p.x>=r.x-v&&p.x<=r.x+r.w+v&&p.y>=r.y-v&&p.y<=r.y+r.d+v)}
-function pkPlan(p){const r=roomAt(p),w=nearWall(p);return{p,furn:furnAt(p),op:nearOp(p),wall:w,room:r,facade:!r&&!!w,path:!r&&!w?pathAt(p):null,vered:!r&&!w&&veredAt(p)}}
+function pkPlan(p){const r=roomAt(p),w=nearWall(p);return{p,furn:furnAt(p),op:nearOp(p),wall:w,room:r,facade:!r&&!!w,path:!r&&!w?pathAt(p):null,slab:!r&&!w?slabAt(p):null,vered:!r&&!w&&veredAt(p)}}
 plan.addEventListener('contextmenu',e=>e.preventDefault());
 plan.addEventListener('pointerdown',e=>{plan.setPointerCapture(e.pointerId);PT.set(e.pointerId,[e.clientX,e.clientY]);
  if(PT.size===2){if(act&&(act.k==='muro'||act.k==='cuarto')){prev=null;act=null}else if(act)tUp();const a=[...PT.values()],c=[(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2];act={k:'pinch',vb:{...VB},d:Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]),c,cs:spt({clientX:c[0],clientY:c[1]})};refresh();return}
@@ -1088,7 +1099,8 @@ function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';cons
  else if(tool==='piso')h='<span class="lbl">Cambiar</span>'+[['cuarto','Habitación entera'],['cuadro','Por cuadros']].map(([k,n])=>`<button class="${fmode===k?'on':''}" data-fm="${k}">${n}</button>`).join('')+(fmode==='cuadro'?[[0.5,'50 cm'],[1,'1 m']].map(([v,n])=>`<button class="${fsize===v?'on':''}" data-fs="${v}">${n}</button>`).join('')+sw('floor','quitar','Quitar cuadros','repeating-linear-gradient(45deg,#ddd 0 4px,#fff 4px 8px)',floorK==='quitar',1):'')+'<span class="sep"></span><span class="lbl">Piso</span>'+Object.entries(FLOOR).map(([k,[n,,bg]])=>sw('floor',k,n,bg,floorK===k,1)).join('');
  else if(tool==='tierra')h='<span class="lbl">Vereda</span>'+[[0,'Sin vereda'],[0.6,'60 cm'],[1,'1 m'],[1.5,'1,5 m']].map(([v,n])=>`<button class="${(+S.vered||0)===v?'on':''}" data-ver="${v}">${n}</button>`).join('')+
   (S.ter!=='playa'?'<span class="sep"></span><span class="lbl">Levantar casa con hormigón</span>'+[[0,'No'],[0.3,'30 cm'],[0.6,'60 cm'],[0.9,'90 cm'],[1.2,'1,2 m']].map(([v,n])=>`<button class="${(+S.zoc||0)===v?'on':''}" data-zoc="${v}">${n}</button>`).join(''):'')+
-  '<span class="sep"></span><span class="lbl">Camino</span>'+`<button class="${tmode==='camino'?'on':''}" data-tm="camino">✎ Dibujar camino</button>`+[[0.8,'Angosto'],[1.2,'Normal'],[3,'Para auto']].map(([v,n])=>`<button class="${tmode==='camino'&&pathW===v?'on':''}" data-pw="${v}">${n}</button>`).join('')+((S.paths||[]).length?'<button data-act="pathdel">Quitar último camino</button>':'')+
+  '<span class="sep"></span><span class="lbl">Radier o patio</span>'+`<button class="${tmode==='radier'?'on':''}" data-tm="radier">▭ Dibujar radier</button>`+((S.slabs||[]).length?'<button data-act="slabdel">Quitar último radier</button>':'')+
+  '<span class="sep"></span><span class="lbl">Camino</span>'+`<button class="${tmode==='camino'?'on':''}" data-tm="camino">✎ Dibujar camino</button>`+[[0.8,'Angosto'],[1.2,'Normal'],[3,'Para auto']].map(([v,n])=>`<button class="${tmode==='camino'&&pathW===v?'on':''}" data-pw="${v}">${n}</button>`).join('')+`<button class="${S.solera?'on':''}" data-act="solera">${S.solera?'✓ ':''}Solerillas al borde</button>`+((S.paths||[]).length?'<button data-act="pathdel">Quitar último camino</button>':'')+
   '<span class="sep"></span><span class="lbl">Casa</span><button data-act="hrot">↻ Girar casa 90°</button><span class="sep"></span><span class="lbl">'+(S.ter==='cerro'?'Cerro':'Terreno')+'</span><button data-act="tr-">↺ Girar</button><button data-act="tr+">↻ Girar</button>'+(S.ter==='cerro'?'<button data-act="tzu">▲ Casa más arriba</button><button data-act="tzd">▼ Más abajo</button><button data-act="txl">◀ Al lado</button><button data-act="txr">▶ Al otro lado</button>':'')+((+S.terR||+S.terX||+S.terZ)?'<button data-act="t0">Lugar original</button>':'')+'<span class="sep"></span>'+'<span class="lbl">Mover tierra a mano</span>'+[['sacar','⛏ Sacar'],['poner','🚜 Poner']].map(([k,n])=>`<button class="${tmode===k?'on':''}" data-tm="${k}">${n}</button>`).join('')+`<span class="lbl" id="bankL">🚜 Carretilla: ${nf(+S.bank||0,1)} m³</span><span class="sep"></span>`+[['subir','▲ Subir'],['bajar','▼ Bajar'],['hoyo','⛏ Hacer hoyo'],['cemento','🪣 Rellenar con cemento'],['aplanar','Aplanar'],['restaurar','Restaurar']].map(([k,n])=>`<button class="${tmode===k?'on':''}" data-tm="${k}">${n}</button>`).join('')+'<span class="sep"></span>'+
   [[0.8,'Pincel chico'],[1.5,'Mediano'],[3,'Grande']].map(([v,n])=>`<button class="${brush===v?'on':''}" data-br="${v}">${n}</button>`).join('')+
   (G.rb?`<span class="sep"></span><span class="lbl">Plataforma de la casa ${G.pad>=0?'+':'−'}${fm(Math.abs(G.pad))} m</span><button data-act="padup">Subir 10 cm</button><button data-act="paddn">Bajar 10 cm</button>${S.padOff?'<button data-act="pad0">Automática</button>':''}`:'')+
@@ -1098,6 +1110,7 @@ function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';cons
  else if(sel&&sel.k==='walls'){const ws=S.walls.filter(w=>sel.ids.includes(w.id)),L=ws.reduce((t,w)=>t+Math.hypot(w.x2-w.x1,w.y2-w.y1),0),ms=new Set(ws.map(wMat));h=`<span class="lbl">${ws.length} muros · ${fm(L)} m</span>`+(sel.dup?`<button class="danger" data-act="wdupdel">🗑 Borrar repetidos</button><span class="lbl" style="color:var(--acc)">Sobraría ≈ ${dupExtra(dupInfo())}</span><span class="sep"></span>`:'')+selWBtns()+'<span class="sep"></span><span class="lbl">Material</span>'+Object.entries(MUROS).map(([k,[n,c]])=>sw('wmall',k,n,c,ms.size===1&&ms.has(k),1)).join('')+'<span class="sep"></span>'+'<button class="danger" data-act="wselDel">Borrar estos muros</button><button data-act="wnone">Quitar selección</button>'}
  else if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(w)h=selWBtns()+`<span class="sep"></span><span class="lbl">Muro de ${fm(Math.hypot(w.x2-w.x1,w.y2-w.y1))} m</span><button data-act="addp">+ Puerta</button><button data-act="addv">+ Ventana</button><span class="sep"></span><button class="danger" data-act="delp">Borrar pedazo (${bsize<1?bsize*100+' cm':'1 m'})</button><button class="danger" data-act="del">Borrar muro entero</button><span class="sep"></span><span class="lbl">Material</span>`+Object.entries(MUROS).map(([k,[n,c]])=>sw('wmw',k,n,c,wMat(w)===k,1)).join('')}
  else if(sel&&sel.k==='room'){const f=roomAt(sel);if(f)h=`<span class="lbl">${f.name?esc(f.name)+' · ':''}${nf(f.area,2)} m²</span><button data-gotool="pintar">Pintar paredes</button><button data-gotool="mueble">Amoblar</button><span class="sep"></span><span class="lbl">Piso</span>`+Object.entries(FLOOR).map(([k,[n,,bg]])=>sw('rfp',k,n,bg,(f.fp||'ceramica')===k,1)).join('')}
+ else if(sel&&sel.k==='slab'){const q=(S.slabs||[]).find(x=>x.id===sel.id);if(q)h=`<span class="lbl">Radier ${fm(q.w)} × ${fm(q.d)} m · ${nf(q.w*q.d,1)} m²</span>`+Object.entries(PATHM).map(([k,[n,c]])=>sw('slm',k,n,hex(c),(q.m||'hormigon')===k,1)).join('')+'<span class="sep"></span><button data-act="slrot">↻ Girar 90°</button><button class="danger" data-act="del">Borrar</button>'}
  else if(sel&&sel.k==='path'){const q=(S.paths||[]).find(x=>x.id===sel.id);if(q)h=`<span class="lbl">Camino de ${fm(Math.hypot(q.x2-q.x1,q.y2-q.y1))} m</span>`+Object.entries(PATHM).map(([k,[n,c]])=>sw('pm',k,n,hex(c),(q.m||'hormigon')===k,1)).join('')+'<span class="sep"></span>'+[[0.8,'Angosto'],[1.2,'Normal'],[3,'Para auto']].map(([v,n])=>`<button class="${q.w===v?'on':''}" data-pwq="${v}">${n}</button>`).join('')+'<button class="danger" data-act="del">Borrar</button>'}
  else if(sel&&sel.k==='vered')h='<span class="lbl">Vereda</span>'+Object.entries(PATHM).map(([k,[n,c]])=>sw('vm',k,n,hex(c),(S.veredM||'hormigon')===k,1)).join('')+'<span class="sep"></span>'+[[0,'Quitar'],[0.6,'60 cm'],[1,'1 m'],[1.5,'1,5 m']].map(([v,n])=>`<button class="${(+S.vered||0)===v?'on':''}" data-ver="${v}">${n}</button>`).join('');
  else if(sel&&sel.k==='roof')h='<span class="lbl">Techo</span>'+Object.entries(ROOFM).map(([k,[n,c]])=>`<button class="${S.techo===k?'on':''}" data-rmat="${k}"><i style="background:${hex(c)}"></i>${n}</button>`).join('')+'<span class="sep"></span><button data-gotool="techo">Forma, inclinación y color</button>';
@@ -1125,6 +1138,7 @@ $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
  if(d.floor){floorK=d.floor;renderSub();return}
  if(d.opm){const o=sel&&sel.k==='op'&&S.ops.find(q=>q.id===sel.id);if(o){snap();o.mat=d.opm;delete o.c;commit(true);toast('Material: '+b.textContent)}return}
  if(d.rfp){const f=sel&&sel.k==='room'&&roomAt(sel);if(f){snap();setRoomProp(f,'fp',d.rfp);for(const k of Object.keys(S.ftile||{})){const c=tileC(k);if(G.inPoly(c.cx,c.cy,f.pts))delete S.ftile[k]}commit(true);toast('Piso: '+b.textContent)}return}
+ if(d.slm){const q=sel&&sel.k==='slab'&&(S.slabs||[]).find(x=>x.id===sel.id);if(q){snap();q.m=d.slm;commit(true);toast('Radier de '+b.textContent.toLowerCase())}return}
  if(d.pm){const q=sel&&sel.k==='path'&&(S.paths||[]).find(x=>x.id===sel.id);if(q){snap();q.m=d.pm;commit(true);toast('Camino de '+b.textContent.toLowerCase())}return}
  if(d.pwq){const q=sel&&sel.k==='path'&&(S.paths||[]).find(x=>x.id===sel.id);if(q){snap();q.w=+d.pwq;commit(true)}return}
  if(d.vm){snap();S.veredM=d.vm;commit(true);toast('Vereda de '+b.textContent.toLowerCase());return}
@@ -1135,7 +1149,7 @@ $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
  if(d.fs){fsize=+d.fs;renderSub();return}
  if(d.bm){bmode=d.bm;renderSub();return}
  if(d.bs){bsize=+d.bs;renderSub();return}
- if(d.tm){tmode=d.tm;renderSub();if(d.tm==='camino')toast('Arrastra sobre el terreno para dibujar el camino');if(d.tm==='sacar')toast('Pasa el dedo por donde quieras sacar tierra (por ejemplo el lado alto). Se guarda en la carretilla',4500);if(d.tm==='poner')toast(+S.bank>0?'Pasa el dedo donde quieras poner la tierra de la carretilla':'La carretilla está vacía: primero usa “Sacar”',4500);return}
+ if(d.tm){tmode=d.tm;renderSub();if(d.tm==='camino')toast('Arrastra sobre el terreno para dibujar el camino. Si empiezas en la punta de otro, se unen',4500);if(d.tm==='radier')toast('Arrastra en diagonal sobre el terreno para dibujar un radier o patio',4500);if(d.tm==='sacar')toast('Pasa el dedo por donde quieras sacar tierra (por ejemplo el lado alto). Se guarda en la carretilla',4500);if(d.tm==='poner')toast(+S.bank>0?'Pasa el dedo donde quieras poner la tierra de la carretilla':'La carretilla está vacía: primero usa “Sacar”',4500);return}
  if(d.br){brush=+d.br;renderSub();return}
  if(d.gotool){const keep=sel;setTool(d.gotool);return}
  const a=d.act;if(!a)return;
@@ -1145,6 +1159,9 @@ $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
  if(a==='rot'){if(!rotSel()){frot=(frot+90)%360;if(ghost&&ghost.k==='f'){ghost.f={...ghost.f,...placeF(ghost.f.k,ghost.f,frot)};refresh()}toast('Girado: '+frot+'°')}return}
  if(a==='delp'&&sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(!w)return;const L=Math.hypot(w.x2-w.x1,w.y2-w.y1);snap();const d=erasePiece(w,sel.t==null?0.5:sel.t,L);sel=null;commit(true);if(d)toast(`Pedazo de ${fm(d)} m borrado. Para seguir, usa la herramienta Borrar y arrastra el dedo`,4000);return}
  if(a==='del')return delSel();
+ if(a==='slrot'){const q=sel&&sel.k==='slab'&&(S.slabs||[]).find(x=>x.id===sel.id);if(q){snap();const cx=q.x+q.w/2,cy=q.y+q.d/2;[q.w,q.d]=[q.d,q.w];q.x=r2(cx-q.w/2);q.y=r2(cy-q.d/2);commit(true)}return}
+ if(a==='solera'){snap();S.solera=S.solera?0:1;commit(false);toast(S.solera?'Solerillas de hormigón en los bordes de los caminos':'Caminos sin solerillas');return}
+ if(a==='slabdel'){snap();S.slabs=(S.slabs||[]).slice(0,-1);commit(true);toast('Radier quitado');return}
  if(a==='pathdel'){snap();S.paths=(S.paths||[]).slice(0,-1);commit(true);toast('Camino quitado');return}
  if(a==='wall'||a==='wext'||a==='wint'){const ext=new Set(G.segs.filter(s=>s.ext).map(s=>s.wall)),ids=S.walls.filter(w=>a==='wall'||(a==='wext')===ext.has(w.id)).map(w=>w.id);multiW=false;sel=ids.length?{k:'walls',ids}:null;refreshSel();toast(ids.length?`${ids.length} muros elegidos: ahora elige el material abajo`:'No hay muros');return}
  if(a==='wmulti'){multiW=!multiW;if(multiW&&sel&&sel.k==='wall')sel={k:'walls',ids:[sel.id]};renderSub();toast(multiW?'Toca varios muros para elegirlos (otro toque los quita)':'Listo');return}
@@ -1176,6 +1193,7 @@ $('#seg').addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(!
 /* ---------- panel de selección ---------- */
 function delSel(){if(!sel)return;snap();if(sel.k==='op')S.ops=S.ops.filter(o=>o.id!==sel.id);
  else if(sel.k==='path')S.paths=(S.paths||[]).filter(q=>q.id!==sel.id);
+ else if(sel.k==='slab')S.slabs=(S.slabs||[]).filter(q=>q.id!==sel.id);
  else if(sel.k==='wall'){S.walls=S.walls.filter(w=>w.id!==sel.id);S.ops=S.ops.filter(o=>o.w!==sel.id)}
  else if(sel.k==='furn')S.furn=S.furn.filter(f=>f.id!==sel.id);sel=null;commit(true)}
 function rotHouse(){if(!S.walls.length){toast('Primero dibuja la casa');return}snap();const b=G.rb||rboxOf(G),cx=Math.round((b.x+b.w/2)*2)/2,cy=Math.round((b.y+b.d/2)*2)/2,R=(x,y)=>[r2(cx-(y-cy)),r2(cy+(x-cx))];
@@ -1184,7 +1202,7 @@ function rotHouse(){if(!S.walls.length){toast('Primero dibuja la casa');return}s
 function tilePaint(p,a){const n=fsize>=1?2:1,i0=Math.floor(p.x/TS),j0=Math.floor(p.y/TS),bi=n>1?i0-(i0%2+2)%2:i0,bj=n>1?j0-(j0%2+2)%2:j0,id=bi+','+bj;if(a.last===id)return;a.last=id;let ch=0;
  for(let i=bi;i<bi+n;i++)for(let j=bj;j<bj+n;j++){const k=i+','+j,c=tileC(k);if(!G.rooms.some(f=>G.inPoly(c.cx,c.cy,f.pts)))continue;if(floorK==='quitar'){if(S.ftile[k]){delete S.ftile[k];ch=1}}else if(S.ftile[k]!==floorK){S.ftile[k]=floorK;ch=1}}
  if(ch){a.n=(a.n||0)+1;commit(false)}}
-function doUndo(){const j=undo.pop();if(!j)return;const o=JSON.parse(j);S.walls=o.walls;S.ops=o.ops;S.labels=o.labels;S.furn=o.furn||[];S.fach=o.fach||'visto';S.dig=o.dig||{};S.conc=o.conc||{};S.padOff=o.padOff||0;S.terR=o.terR||0;S.ftile=o.ftile||{};S.paths=o.paths||[];S.vered=o.vered||0;S.zoc=o.zoc||0;S.baseV=o.baseV||0;S.bank=o.bank||0;S.terX=o.terX||0;S.terZ=o.terZ||0;sel=null;$('#bUndo').disabled=!undo.length;commit(true)}
+function doUndo(){const j=undo.pop();if(!j)return;const o=JSON.parse(j);S.walls=o.walls;S.ops=o.ops;S.labels=o.labels;S.furn=o.furn||[];S.fach=o.fach||'visto';S.dig=o.dig||{};S.conc=o.conc||{};S.padOff=o.padOff||0;S.terR=o.terR||0;S.ftile=o.ftile||{};S.paths=o.paths||[];S.vered=o.vered||0;S.zoc=o.zoc||0;S.baseV=o.baseV||0;S.bank=o.bank||0;S.slabs=o.slabs||[];S.solera=o.solera||0;S.terX=o.terX||0;S.terZ=o.terZ||0;sel=null;$('#bUndo').disabled=!undo.length;commit(true)}
 $('#bUndo').addEventListener('click',doUndo);$('#bUndo2').addEventListener('click',doUndo);
 function renderPanel(){const el=$('#rp');let h='';
  if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(!w){sel=null;return renderPanel()}
@@ -1305,7 +1323,7 @@ $('#bWv').addEventListener('click',()=>{const ks=Object.keys(WVN);S.wv=ks[(ks.in
 (()=>{let seen=false;try{seen=!!localStorage.getItem('casas-gest')}catch(e){}if(touchy&&!seen){$('#gest').classList.remove('hide');setTimeout(()=>$('#gest').classList.add('hide'),15000)}
  $('#bGestX').addEventListener('click',()=>{$('#gest').classList.add('hide');try{localStorage.setItem('casas-gest','1')}catch(e){}})})();
 
-const APPV=22;$('#vtag').textContent='v'+APPV;
+const APPV=23;$('#vtag').textContent='v'+APPV;
 (()=>{const el=$('#appv');let t=`Versión ${APPV} del Constructor de casas.`;const A=window.AndroidApp;
  el.innerHTML=t+(A&&A.update?' <button class="b" id="bUpd">Buscar actualización</button>':'')+' <button class="b" id="bTut">Ver tutorial</button>';$('#bTut').addEventListener('click',()=>{$('#sheet').classList.add('hide');tutStart()});if(A&&A.update)$('#bUpd').addEventListener('click',()=>{toast('Buscando actualización…');A.update()})})();
 
@@ -1330,7 +1348,7 @@ const TUT=[
  ['tool','mueble','8. Muebles','Elige la categoría y el mueble, y tócalo sobre el piso. En <b>Jardín</b> tienes pasto, flores, cercos, árboles, huerta y más para afuera. Arrástralo para moverlo y usa <b>↻ Girar</b>.'],
  ['tool','pintar','9. Pintar','Elige un color y toca una habitación, la fachada, un mueble, una puerta o una ventana. Con <b>Piso</b> cambias el piso de toda una habitación o <b>por cuadros</b>, arrastrando el dedo (por ejemplo cerámica en la cocina y madera en el living).'],
  ['tool','techo','10. Techo','Elige la forma, el material, la <b>inclinación</b> y el color. Puedes girar el techo, hacer que siga la forma de la casa y agregar chimenea, tragaluces y canaletas.'],
- ['tool','tierra','11. Terreno y exterior','Sube o baja la tierra con el dedo. Abajo puedes <b>hacer hoyos</b> y <b>rellenarlos con cemento</b>, agregar <b>vereda</b>, <b>levantas la casa con hormigón</b>, dibujas <b>caminos</b>, giras la casa y eliges el lugar en el cerro.'],
+ ['tool','tierra','11. Terreno y exterior','Sube o baja la tierra con el dedo. Abajo puedes <b>hacer hoyos</b> y <b>rellenarlos con cemento</b>, agregar <b>vereda</b>, <b>levantas la casa con hormigón</b>, dibujas <b>radieres o patios</b> y <b>caminos</b> (se unen solos y pueden llevar solerillas), giras la casa y eliges el lugar en el cerro.'],
  ['#bWv',null,'Ver por dentro','Este botón cambia los muros: con techo, altos, recortados o bajos, para ver el interior.'],
  ['#bMat',null,'Materiales y costo','Abajo a la izquierda ves la versión, los sacos de cemento y el costo. Tócalo para ver la lista de materiales, cuánto necesitas de cada cosa y un <b>costo estimado</b> con precios que puedes cambiar. Se calcula solo con todo lo que dibujas.'],
  ['#bMenu',null,'Menú','En el <b>Menú</b> está todo lo del proyecto: guardar, abrir, plantillas, fotos y el tipo de terreno. Te muestro dónde está cada cosa.'],
@@ -1628,6 +1646,13 @@ function fModel(k,gh,fc){const g=new THREE.Group(),F=FURN[k];if(!F)return g;
   case 'cercom':[-0.95,0,0.95].forEach(x=>B(0.08,1.1,0.08,x,0.55,0,W));[0.35,0.8].forEach(y=>B(2,0.09,0.03,0,y,0.04,WL));for(let x=-0.9;x<=0.91;x+=0.15)B(0.1,1.0,0.02,x,0.5,0.06,WL);break;
   case 'columpio':[-1,1].forEach(x=>{B(0.08,2.1,0.08,x,1.05,-0.45,W);B(0.08,2.1,0.08,x,1.05,0.45,W)});B(2.1,0.1,0.1,0,2.1,0,W);[-0.4,0.4].forEach(x=>{[-0.15,0.15].forEach(dx=>C(0.01,0.01,1.6,x+dx,1.3,0,DK,6));B(0.45,0.04,0.2,x,0.5,0,0xc4532d)});break;
   case 'macetag':C(0.42,0.32,0.6,0,0.3,0,0xc97b5b,16);C(0.4,0.4,0.03,0,0.6,0,0x5a3e2b,16);{const s=new THREE.Mesh(new THREE.IcosahedronGeometry(0.38,1),gh?GM:mat(0x5d9447,{flatShading:true}));s.position.y=0.95;s.castShadow=!gh;g.add(s)}break;
+  case 'quincho':[-1.9,1.9].forEach(x=>[-1.4,1.4].forEach(z=>B(0.14,2.5,0.14,x,1.25,z,W)));B(4.4,0.1,3.4,0,2.58,0,0x7a4f2c);B(1.4,0.9,0.6,-1.2,0.45,-1.1,0xa0522d);B(1.2,0.05,0.5,-1.2,0.93,-1.1,DK);B(0.6,1.6,0.45,-1.2,1.75,-1.2,0xa0522d);B(1.8,0.06,0.9,0.6,0.76,0.3,W);[[-0.2,-0.05],[1.4,-0.05],[-0.2,0.65],[1.4,0.65]].forEach(([x,z])=>B(0.06,0.74,0.06,x,0.37,z,W));B(1.8,0.05,0.32,0.6,0.45,-0.45,W);B(1.8,0.05,0.32,0.6,0.45,1.05,W);break;
+  case 'bodega':B(2.5,2.1,2,0,1.05,0,fc!=null?fc:0x9aa3a8);B(2.7,0.08,2.3,0,2.18,0,0x6f777c);B(0.9,1.9,0.03,0.5,0.95,1.01,0x6f777c);break;
+  case 'carport':[-1.4,1.4].forEach(x=>[-2.6,0,2.6].forEach(z=>B(0.1,2.4,0.1,x,1.2,z,DK)));B(3.3,0.06,5.9,0,2.43,0,0xc9ced3);[-1.4,1.4].forEach(x=>B(0.12,0.16,5.8,x,2.32,0,DK));break;
+  case 'porton':[-2,2].forEach(x=>B(0.15,1.9,0.15,x,0.95,0,DK));[0.2,1.75].forEach(y=>B(3.85,0.06,0.06,0,y,0,DK));for(let x=-1.85;x<=1.86;x+=0.15)B(0.03,1.65,0.03,x,0.97,0,DK);break;
+  case 'poste':C(0.05,0.07,3.2,0,1.6,0,DK,8);B(0.6,0.05,0.05,0.3,3.15,0,DK);B(0.32,0.1,0.18,0.56,3.08,0,0xfff3c4);break;
+  case 'lenera':[-0.75,0.75].forEach(x=>[-0.35,0.35].forEach(z=>B(0.08,1.5,0.08,x,0.75,z,W)));B(1.8,0.05,1,0,1.52,0,0x6f777c);for(let i=0;i<4;i++)for(let j=0;j<5;j++)C(0.07,0.07,0.65,-0.56+j*0.28,0.1+i*0.15,0,0x8b5a2b,7).rotation.x=Math.PI/2;break;
+  case 'basurero':B(0.5,0.85,0.5,-0.3,0.43,0,0x3d7a4a);B(0.52,0.05,0.52,-0.3,0.88,0,0x2f5d39);B(0.5,0.85,0.5,0.3,0.43,0,0x2f5a8a);B(0.52,0.05,0.52,0.3,0.88,0,0x24476d);break;
   case 'farol':C(0.03,0.04,1.4,0,0.7,0,DK,8);B(0.18,0.25,0.18,0,1.5,0,0xfff3c4);B(0.22,0.04,0.22,0,1.64,0,DK);break;
   case 'banca':B(1.5,0.05,0.45,0,0.45,0,W);B(1.5,0.4,0.05,0,0.7,-0.2,W);[-0.65,0.65].forEach(x=>B(0.06,0.45,0.45,x,0.22,0,DK));break;
   case 'piscina':B(w,0.12,d,0,0.06,0,0xe9e7e1);B(w-0.3,0.02,d-0.3,0,0.12,0,0x3fa6d6);B(w-0.3,0.01,d-0.3,0,0.125,0,'gl');B(0.5,0.02,0.4,w/2-0.5,0.13,d/2-0.35,ST);break;
@@ -1687,7 +1712,7 @@ function init3D(){
    if(d.t==='seg'||d.t==='op'){if(d.t==='op')pk.op=G.ops.find(q=>q.id===d.id);pk.wall=nearWall(hp,0.3);pk.onWall=true;
     const n=h.face.normal.clone().transformDirection(h.object.matrixWorld);if(Math.abs(n.y)<0.5){const r=roomAt({x:hp.x+n.x*0.15,y:hp.y+n.z*0.15});if(r)pk.room=r;else pk.facade=true}break}
    if(d.t==='room'){pk.room=G.rooms[d.id];break}
-   if(d.t==='roof'){pk.roof=true;break}if(d.t==='path'){pk.path=(S.paths||[]).find(q=>q.id===d.id);break}if(d.t==='vered'){pk.vered=true;break}}
+   if(d.t==='roof'){pk.roof=true;break}if(d.t==='slab'){pk.slab=(S.slabs||[]).find(q=>q.id===d.id);break}if(d.t==='path'){pk.path=(S.paths||[]).find(q=>q.id===d.id);break}if(d.t==='vered'){pk.vered=true;break}}
   pk.q=pk.onWall?pk.hp:pk.p;if(!pk.p)pk.p=pk.hp;return pk};
  const wallPt=w=>{const n=new THREE.Vector3(-(w.y2-w.y1),0,w.x2-w.x1).normalize(),pl=new THREE.Plane().setFromNormalAndCoplanarPoint(n,new THREE.Vector3(w.x1,0,w.y1)),v=new THREE.Vector3();return RAY.ray.intersectPlane(pl,v)?{x:v.x,y:v.z}:null};
  const P3=new Map();let g3=null;
@@ -1786,7 +1811,10 @@ function build3D(){if(!R)return;try{
   for(const q of S.paths||[]){const L=Math.hypot(q.x2-q.x1,q.y2-q.y1);if(L<0.1)continue;const ux=(q.x2-q.x1)/L,uy=(q.y2-q.y1)/L,nx=-uy*q.w/2,ny=ux*q.w/2,n=Math.max(1,Math.ceil(L/0.5)),V=[],I=[],UVp=[];
    for(let i=0;i<=n;i++){const x=q.x1+ux*L*i/n,y=q.y1+uy*L*i/n;for(const sg of[-1,1]){const px=x+nx*sg,py=y+ny*sg;let h=-1e9;for(const[a,b]of[[px,py],[x,y],[px+0.4,py],[px-0.4,py],[px,py+0.4],[px,py-0.4]])h=Math.max(h,effH(a,b));V.push(px,h+0.07,py);UVp.push(px,-py)}
     if(i<n){const k=i*2;I.push(k,k+2,k+1,k+1,k+2,k+3)}}
-   const ge=new THREE.BufferGeometry();ge.setAttribute('position',new THREE.Float32BufferAttribute(V,3));ge.setIndex(I);ge.setAttribute('uv',new THREE.Float32BufferAttribute(UVp,2));ge.computeVertexNormals();const m=new THREE.Mesh(ge,sm(q.m)||pm);m.receiveShadow=true;m.material.side=THREE.DoubleSide;m.userData={t:'path',id:q.id};root.add(m)}
+   const ge=new THREE.BufferGeometry();ge.setAttribute('position',new THREE.Float32BufferAttribute(V,3));ge.setIndex(I);ge.setAttribute('uv',new THREE.Float32BufferAttribute(UVp,2));ge.computeVertexNormals();const m=new THREE.Mesh(ge,sm(q.m)||pm);m.receiveShadow=true;m.material.side=THREE.DoubleSide;m.userData={t:'path',id:q.id};root.add(m);
+   const pm2=sm(q.m)||pm;for(const[ex,ey]of[[q.x1,q.y1],[q.x2,q.y2]]){let h=-1e9;for(const[a,b]of[[ex,ey],[ex+0.4,ey],[ex-0.4,ey],[ex,ey+0.4],[ex,ey-0.4]])h=Math.max(h,effH(a,b));const c=new THREE.Mesh(new THREE.CircleGeometry(q.w/2,24),pm2);c.rotation.x=-Math.PI/2;c.position.set(ex,h+0.068,ey);c.receiveShadow=true;c.userData={t:'path',id:q.id};root.add(c)}
+   if(S.solera){const cm2=mc(0xc9c6be),n2=Math.max(1,Math.round(L));for(let i=0;i<n2;i++){const t=(i+0.5)/n2,x=q.x1+ux*L*t,y=q.y1+uy*L*t;for(const sg of[-1,1]){const px=x+nx*sg*1.04,py=y+ny*sg*1.04;let h=-1e9;for(const[a,b]of[[px,py],[x,y]])h=Math.max(h,effH(a,b));const grp=segGroup(px,0,py,Math.atan2(uy,ux));wbox(L/n2-0.02,0.22,0.1,0,h+0.06,0,cm2,grp)}}}}
+  for(const q of S.slabs||[]){const lv=slabLv(q),b=wbox(q.w,lv.top-lv.bot+0.2,q.d,q.x+q.w/2,(lv.top+lv.bot-0.2)/2,q.y+q.d/2,sm(q.m)||mc(0xbdbab2));b.userData={t:'slab',id:q.id};if(sel&&sel.k==='slab'&&sel.id===q.id)wbox(q.w+0.1,0.06,q.d+0.1,q.x+q.w/2,lv.top+0.03,q.y+q.d/2,HL)}
   const zh=y0-g.pad-0.25;if(zh>0.05&&S.ter!=='playa'){const ns=Math.ceil(zh/0.18),rs=(y0-g.pad)/ns;
    for(const o of g.ops){if(o.t!=='puerta'||!o.ext)continue;const s=o.s,L=s.len,ux=(s.x2-s.x1)/L,uy=(s.y2-s.y1)/L;let nx=-uy,ny=ux;if(roomAt({x:o.cx+nx*0.4,y:o.cy+ny*0.4})){nx=-nx;ny=-ny}
     const grp=new THREE.Group();grp.position.set(o.cx,g.pad,o.cy);grp.rotation.y=-Math.atan2(ny,nx);root.add(grp);
@@ -1877,6 +1905,7 @@ function build3D(){if(!R)return;try{
 function drawFx(){if(!R)return;clear(FX);const H=+S.H,y0=Y0();let lab=null;
  if(prev&&prev.k==='camino'){const p=prev,L=Math.hypot(p.x2-p.x1,p.y2-p.y1);if(L>0.01){const grp=new THREE.Group();grp.position.set(p.x1,Math.max(effH(p.x1,p.y1),effH(p.x2,p.y2))+0.1,p.y1);grp.rotation.y=-Math.atan2(p.y2-p.y1,p.x2-p.x1);FX.add(grp);wbox(L,0.06,pathW,L/2,0,0,GM,grp).castShadow=false}
   lab={x:p.x2,y:p.y2,t:fm(L)+' m'}}
+ else if(prev&&prev.k==='slab'){const p=prev,x=Math.min(p.x1,p.x2),y=Math.min(p.y1,p.y2),w=Math.abs(p.x2-p.x1),d=Math.abs(p.y2-p.y1);if(w>0.05&&d>0.05){const lv=slabLv({x,y,w,d});wbox(w,0.12,d,x+w/2,lv.top-0.04,y+d/2,GM).castShadow=false}lab={x:x+w/2,y:y+d/2,t:`${fm(w)} × ${fm(d)} m`}}
  else if(prev){const p=prev,segs=p.k==='muro'?[[p.x1,p.y1,p.x2,p.y2]]:RW(Math.min(p.x1,p.x2),Math.min(p.y1,p.y2),Math.abs(p.x2-p.x1),Math.abs(p.y2-p.y1)).map(q=>[q.x1,q.y1,q.x2,q.y2]);
   for(const[a,b,c,d]of segs){const L=Math.hypot(c-a,d-b);if(L<0.01)continue;const grp=new THREE.Group();grp.position.set(a,y0,b);grp.rotation.y=-Math.atan2(d-b,c-a);FX.add(grp);wbox(L,H,0.16,L/2,H/2,0,GM,grp).castShadow=false}
   const dot=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,0.05,16),GMD);dot.position.set(p.x1,y0+0.04,p.y1);FX.add(dot);
