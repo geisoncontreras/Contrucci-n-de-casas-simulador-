@@ -37,6 +37,7 @@ header p{margin:0;color:var(--mut);max-width:70ch}
 .ctot{margin:16px 0;padding:12px 14px;border-radius:12px;background:var(--card);display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:17px}
 .perbar{position:absolute;left:8px;right:8px;top:52px;z-index:5;background:rgba(255,255,255,.94);color:#1c1d1f;border-radius:14px;padding:8px 10px;box-shadow:0 4px 16px rgba(0,0,0,.18);font:500 13px Barlow,sans-serif}.perbar.hide{display:none}.perbar div{display:flex;gap:6px;overflow-x:auto;margin-top:6px}.perbar button{flex:0 0 auto;border:1px solid #d6d2c8;background:#fff;border-radius:10px;padding:7px 10px;font:600 13px Barlow,sans-serif;color:#1c1d1f}.perbar button.on,#bPer.on{background:#c4532d;color:#fff;border-color:#c4532d}
 .flbar{position:absolute;right:8px;bottom:52px;z-index:4;display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.92);border-radius:999px;padding:4px 6px 4px 10px;box-shadow:0 2px 8px rgba(0,0,0,.15);font:600 12px Barlow,sans-serif;color:#1c1d1f}.flbar button{min-width:30px;height:30px;border-radius:999px;border:1px solid #d6d2c8;background:#fff;font:700 13px Barlow,sans-serif;color:#1c1d1f;padding:0 8px}.flbar button.on{background:#c4532d;color:#fff;border-color:#c4532d}
+.dimf{display:flex;align-items:center;gap:4px;flex:none;color:var(--mut);font:600 13px Barlow,sans-serif;padding:0 2px}.dimf input{width:62px;height:36px;border:1px solid #d6d2c8;border-radius:8px;padding:0 6px;font:600 15px Barlow,sans-serif;color:var(--ink);background:#fff}
 .qf{display:flex;flex-wrap:wrap;gap:8px}.qf .b{flex:1 1 140px}
 #tut{position:fixed;inset:0;z-index:60}#tut.hide{display:none}#tut.dim{background:rgba(0,0,0,.55)}
 .tut-hl{position:fixed;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.55);outline:3px solid #f0a37f;pointer-events:none;transition:all .25s}
@@ -622,7 +623,9 @@ const emptyFl=()=>({walls:[],ops:[],labels:[],furn:[],ftile:{}});
 function floorData(k){if(k===(S.cur||0))return{walls:S.walls,ops:S.ops,labels:S.labels,furn:S.furn,ftile:S.ftile||{}};return(S.lv&&S.lv[k])||emptyFl()}
 function withFloor(k,fn,force){if(k===(S.cur||0)&&!force)return fn();const d=k===(S.cur||0)?floorData(k):(S.lv&&S.lv[k])||emptyFl(),keep={},og=G,of=FLO;for(const q of FLK){keep[q]=S[q];S[q]=d[q]||(q==='ftile'?{}:[])}FLO=k;
  try{geo.nest=(geo.nest||0)+1;try{G=geo()}finally{geo.nest--}return fn()}finally{for(const q of FLK)S[q]=keep[q];G=og;FLO=of}}
-function stairRects(k){return floorData(k).furn.filter(f=>STAIRS.has(f.k)).map(f=>{const F=FURN[f.k],a=f.r*Math.PI/180,c=Math.cos(a),s=Math.sin(a),hw=F.w/2+0.05,hd=F.d/2+0.05;return{f,pts:[[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(([x,y])=>[f.x+x*c-y*s,f.y+x*s+y*c])}})}
+/* tamaño de cada mueble (se puede agrandar o achicar) */
+function fDim(f){const F=FURN[f.k];if(!F||!(f.sx||f.sz))return F;return Object.assign({},F,{w:F.w*(+f.sx||1),d:F.d*(+f.sz||1)})}
+function stairRects(k){return floorData(k).furn.filter(f=>STAIRS.has(f.k)).map(f=>{const F=fDim(f),a=f.r*Math.PI/180,c=Math.cos(a),s=Math.sin(a),hw=F.w/2+0.05,hd=F.d/2+0.05;return{f,pts:[[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(([x,y])=>[f.x+x*c-y*s,f.y+x*s+y*c])}})}
 function geo(){const g=buildGeo(S.walls,S.ops,S.labels),seg=g.segs;
  const inRoom=(x,y)=>g.rooms.some(f=>g.inPoly(x,y,f.pts));
  for(const s of seg){const ux=(s.x2-s.x1)/s.len,uy=(s.y2-s.y1)/s.len,n=[-uy,ux],mx=(s.x1+s.x2)/2,my=(s.y1+s.y2)/2;
@@ -922,7 +925,7 @@ function nearWall(p,tol=Math.max(0.35,VB.w/35)){let best=null,bd=tol;
   const d=Math.hypot(w.x1+dx*t-p.x,w.y1+dy*t-p.y);if(d<bd){bd=d;best={w,t,L}}}return best}
 function nearOp(p,tol=Math.max(0.4,VB.w/30)){let best=null,bd=tol;for(const o of G.ops){const d=Math.hypot(o.cx-p.x,o.cy-p.y);if(d<bd){bd=d;best=o}}return best}
 function roomAt(p){return G.rooms.find(f=>G.inPoly(p.x,p.y,f.pts))}
-function furnAt(p,noRug){let rug=null;for(let i=S.furn.length-1;i>=0;i--){const f=S.furn[i],F=FURN[f.k];if(!F)continue;const a=f.r*Math.PI/180,dx=p.x-f.x,dy=p.y-f.y,lx=dx*Math.cos(a)+dy*Math.sin(a),ly=-dx*Math.sin(a)+dy*Math.cos(a);
+function furnAt(p,noRug){let rug=null;for(let i=S.furn.length-1;i>=0;i--){const f=S.furn[i],F=fDim(f);if(!F)continue;const a=f.r*Math.PI/180,dx=p.x-f.x,dy=p.y-f.y,lx=dx*Math.cos(a)+dy*Math.sin(a),ly=-dx*Math.sin(a)+dy*Math.cos(a);
   if(Math.abs(lx)<=F.w/2&&Math.abs(ly)<=F.d/2){if(f.k!=='alfombra')return f;rug=rug||f}}return noRug?null:rug}
 function placeF(k,p,r){const F=FURN[k];
  if(F.wall){const n=nearWall(p,F.d/2+0.45);if(n){const w=n.w,ux=(w.x2-w.x1)/n.L,uy=(w.y2-w.y1)/n.L;let nx=-uy,ny=ux;const qx=w.x1+ux*n.t*n.L,qy=w.y1+uy*n.t*n.L;
@@ -930,7 +933,7 @@ function placeF(k,p,r){const F=FURN[k];
   return{x:r2(w.x1+ux*al+nx*(th+F.d/2+0.01)),y:r2(w.y1+uy*al+ny*(th+F.d/2+0.01)),r:Math.round(Math.atan2(-nx,ny)*180/Math.PI+360)%360}}}
  return{x:Math.round(p.x*20)/20,y:Math.round(p.y*20)/20,r}}
 
-function fSVG(f,C,on,gh,fs){const F=FURN[f.k];if(!F)return'';
+function fSVG(f,C,on,gh,fs){const F=fDim(f);if(!F)return'';
  let s=`<g transform="translate(${f.x} ${f.y}) rotate(${f.r})" opacity="${gh?0.55:1}"><rect x="${-F.w/2}" y="${-F.d/2}" width="${F.w}" height="${F.d}" rx="0.05" fill="${F.pc}" stroke="${on||gh?C.acc:'#4b4f55'}" stroke-width="${on?0.06:0.016}"/>`;
  if(f.k!=='alfombra')s+=`<line x1="${-F.w/2+0.06}" y1="${F.d/2-0.07}" x2="${F.w/2-0.06}" y2="${F.d/2-0.07}" stroke="#4b4f55" stroke-width="0.014" opacity=".6"/>`;
  s+='</g>';if(F.s&&fs)s+=`<text x="${f.x}" y="${f.y}" font-size="${Math.min(fs*0.62,F.w/3.2)}" text-anchor="middle" dominant-baseline="middle" fill="#2c2e31" pointer-events="none">${F.s}</text>`;return s}
@@ -948,7 +951,7 @@ function planSVG(ex){
   if(G.ct)s+=`<path d="${G.ct}" fill="none" stroke="#9a7b4f" stroke-width="${vb.w/450}" opacity=".7"/>`;
   if(under&&!ul.hid)s+=`<image href="${under}" x="${ul.x}" y="${ul.y}" width="${ul.w}" height="${ul.w*(ul.ar||1)}" opacity="${ul.o/100}" preserveAspectRatio="none"/>`}
  if(!ex&&(S.cur||0)>0){const d=floorData(S.cur-1);for(const w of d.walls)s+=`<line x1="${w.x1}" y1="${w.y1}" x2="${w.x2}" y2="${w.y2}" stroke="#9a968c" stroke-width="0.1" stroke-dasharray="0.25 0.15" opacity=".75"/>`;for(const r of stairRects(S.cur-1))s+=`<polygon points="${r.pts.map(p=>p.join(',')).join(' ')}" fill="#c4532d" fill-opacity=".12" stroke="#c4532d" stroke-width="0.06" stroke-dasharray="0.2 0.12"/>`}
- for(const q of (S.cur||0)?[]:S.slabs||[]){const on=sel&&sel.k==='slab'&&sel.id===q.id,kd=q.k||'radier';s+=`<rect x="${q.x}" y="${q.y}" width="${q.w}" height="${q.d}" fill="${kd==='terraza'?'#c9a57e':kd==='techo'?'none':hex((PATHM[q.m]||PATHM.hormigon)[1])}" stroke="${on?C.acc:'#9d9a93'}" stroke-width="${on?0.12:0.05}"/>`;if(on){const pr=q.roof||kd==='techo',hs=0.22;if(kd==='terraza')slabPils(q).forEach((pp,i)=>{const[x,z]=pilXY(q,pp,0.06),o=sel.pil&&sel.pil.a==='pil'&&sel.pil.i===i;s+=`<rect x="${x-0.09}" y="${z-0.09}" width="0.18" height="0.18" fill="${o?C.acc:'#7a5a3a'}" stroke="#fff" stroke-width="0.03"/>`});if(pr)roofPils(q).forEach((pp,i)=>{const[x,z]=pilXY(q,pp,0.1),o=sel.pil&&sel.pil.a==='rpil'&&sel.pil.i===i;s+=`<circle cx="${x}" cy="${z}" r="0.13" fill="${o?C.acc:'#5b6166'}" stroke="#fff" stroke-width="0.03"/>`});
+ for(const q of (S.cur||0)?[]:S.slabs||[]){const on=sel&&sel.k==='slab'&&sel.id===q.id,kd=q.k||'radier';s+=`<rect x="${q.x}" y="${q.y}" width="${q.w}" height="${q.d}" fill="${kd==='terraza'?'#c9a57e':kd==='techo'?'none':hex((PATHM[q.m]||PATHM.hormigon)[1])}" stroke="${on?C.acc:'#9d9a93'}" stroke-width="${on?0.12:0.05}"/>`;if(on){const pr=q.roof||kd==='techo',hs=0.32;if(kd==='terraza')slabPils(q).forEach((pp,i)=>{const[x,z]=pilXY(q,pp,0.06),o=sel.pil&&sel.pil.a==='pil'&&sel.pil.i===i;s+=`<rect x="${x-0.14}" y="${z-0.14}" width="0.28" height="0.28" fill="${o?C.acc:'#e2774f'}" stroke="#fff" stroke-width="0.03"/>`});if(pr)roofPils(q).forEach((pp,i)=>{const[x,z]=pilXY(q,pp,0.1),o=sel.pil&&sel.pil.a==='rpil'&&sel.pil.i===i;s+=`<circle cx="${x}" cy="${z}" r="0.2" fill="${o?'#ffd54a':'#e2774f'}" stroke="#fff" stroke-width="0.03"/>`});
    [[q.x+q.w/2,q.y],[q.x+q.w,q.y+q.d/2],[q.x+q.w/2,q.y+q.d],[q.x,q.y+q.d/2]].forEach(([x,z])=>s+=`<circle cx="${x}" cy="${z}" r="${hs}" fill="#fff" stroke="${C.acc}" stroke-width="0.07"/>`);if(kd==='terraza'){const di=deckInfo(q);if(di.st){const e=di.st,x=e.x1+e.ux*di.sc,z=e.z1+e.uz*di.sc,nx=-e.uz*e.out,nz=e.ux*e.out;s+=`<line x1="${x-e.ux*0.5}" y1="${z-e.uz*0.5}" x2="${x+e.ux*0.5}" y2="${z+e.uz*0.5}" stroke="#7a5a3a" stroke-width="0.12"/><line x1="${x}" y1="${z}" x2="${x+nx*0.7}" y2="${z+nz*0.7}" stroke="#7a5a3a" stroke-width="0.06"/>`}}}
   if(q.roof||kd==='techo')s+=`<rect x="${q.x-0.2}" y="${q.y-0.2}" width="${q.w+0.4}" height="${q.d+0.4}" fill="none" stroke="#6f777c" stroke-width="0.06" stroke-dasharray="0.3 0.2"/><line x1="${q.x-0.2}" y1="${q.y-0.2}" x2="${q.x+q.w+0.2}" y2="${q.y+q.d+0.2}" stroke="#6f777c" stroke-width="0.04" stroke-dasharray="0.3 0.2"/>`}
  for(const q of S.paths||[])s+=`<line x1="${q.x1}" y1="${q.y1}" x2="${q.x2}" y2="${q.y2}" stroke="#b9b6ae" stroke-width="${q.w}" stroke-linecap="round"/>`;
@@ -1031,7 +1034,7 @@ function brushAt(p,a){const R=brush,i0=clamp(Math.floor(p.x-TG.x0-R),0,TG.n),i1=
  {const e=$('#bankL');if(e)e.textContent=`🚜 Carretilla: ${nf(+S.bank||0,1)} m³`;if(a.empty&&!a.warned){a.warned=1;toast('La carretilla está vacía: primero usa “Sacar” en el lado alto')}}
  const op=G.pad;G=geo();if(G.pad!==op||a.cem)build3D();else{updTerrain();draw()}drawPlan();if(typeof sfx==='function')sfx(tmode==='cemento'?'cem':'dig')}
 function tDown(p,pk,src){if(!p)return;ghost=null;hover.k='';const t=tool;if(typeof perDown==='function'&&perDown(p,pk||{}))return;
- if((t==='elegir'||t==='tierra')&&sel&&sel.k==='slab'&&slabGrab(p,src))return;
+ if((t==='elegir'||t==='tierra')&&sel&&sel.k==='slab'&&slabGrab(p,src,pk))return;
  if(t==='muro'||t==='cuarto'){const q=snapP(pk.q||p,stol(src));act={k:t,x1:q.x,y1:q.y,src};prev={k:t,x1:q.x,y1:q.y,x2:q.x,y2:q.y};refresh();return}
  if(t==='puerta'||t==='ventana'){const n=pk.wall||nearWall(p,wtol(src))||nearWall(p,1.6);if(!n){toast('Toca cerca de un muro');return}const o=addOp(n,t,t==='ventana'?winK:doorK);if(!o)return;act={k:'mop',id:o.id,moved:true,src};commit(true);return}
  if(t==='mueble'){if(pk.furn&&(pk.furn.k!=='alfombra'||fk==='alfombra'))return grabF(pk.furn,p);
@@ -1039,7 +1042,7 @@ function tDown(p,pk,src){if(!p)return;ghost=null;hover.k='';const t=tool;if(type
  if(t==='elegir'&&multiW){if(pk.wall){const id=pk.wall.w.id,ids=sel&&sel.k==='walls'?sel.ids.slice():[],dp=sel&&sel.dup;const i=ids.indexOf(id);if(i>=0)ids.splice(i,1);else ids.push(id);sel=ids.length?{k:'walls',ids,dup:dp}:null;sfx('tap');refreshSel()}else toast('Toca los muros que quieras agregar');return}
  if(t==='elegir'){if(pk.furn)return grabF(pk.furn,p);
   if(pk.op){snap();sel={k:'op',id:pk.op.id};act={k:'mop',id:pk.op.id,moved:false,src};refreshSel();return}
-  if(pk.roof&&!pk.wall&&!pk.room)sel={k:'roof'};else if(pk.wall)sel={k:'wall',id:pk.wall.w.id,t:pk.wall.t};else if(pk.room)sel={k:'room',x:pk.room.c[0],y:pk.room.c[1]};else{const q=pk.path||(pk.p&&pathAt(pk.p)),sl=!q&&(pk.slab||(pk.p&&slabAt(pk.p)));if(sl)sel={k:'slab',id:sl.id};else if(q)sel={k:'path',id:q.id};else if(pk.vered||(pk.p&&veredAt(pk.p)))sel={k:'vered'};else sel=null}refreshSel();return}
+  if(pk.roof&&!pk.wall&&!pk.room)sel={k:'roof'};else if(pk.wall)sel={k:'wall',id:pk.wall.w.id,t:pk.wall.t};else if(pk.room)sel={k:'room',x:pk.room.c[0],y:pk.room.c[1]};else{const q=pk.path||(pk.p&&pathAt(pk.p)),sl=!q&&(pk.slab||(pk.p&&slabAt(pk.p)));if(sl){if(!sel||sel.id!==sl.id)toast('Arrastra las bolas: blancas cambian el tamaño, naranjas mueven pilares, azul la mueve entera',4500);sel={k:'slab',id:sl.id}}else if(q)sel={k:'path',id:q.id};else if(pk.vered||(pk.p&&veredAt(pk.p)))sel={k:'vered'};else sel=null}refreshSel();return}
  if(t==='borrar'){sfx('del');if(pk.furn){snap();S.furn=S.furn.filter(q=>q!==pk.furn);sel=null;commit(true);return}
   if(pk.op){snap();S.ops=S.ops.filter(q=>q.id!==pk.op.id);sel=null;commit(true);return}
   if(pk.wall){const w=pk.wall.w,L=pk.wall.L,t=pk.wall.t;
@@ -1101,10 +1104,20 @@ const PT=new Map();
 let multiW=false;
 const selWBtns=()=>{const di=dupInfo(),n=di.dup.length+di.part.length;return (n?`<button class="danger" data-act="wdup">⚠ Repetidos (${n})</button>`:'')+`<span class="lbl">Elegir muros</span><button data-act="wall">Todos</button><button data-act="wext">Exteriores</button><button data-act="wint">Interiores</button><button class="${multiW?'on':''}" data-act="wmulti">${multiW?'✓ ':''}Varios</button>`};
 function pathAt(p){for(const q of [...(S.paths||[])].reverse()){const dx=q.x2-q.x1,dy=q.y2-q.y1,L2=dx*dx+dy*dy;if(!L2)continue;const t=clamp(((p.x-q.x1)*dx+(p.y-q.y1)*dy)/L2,0,1);if(Math.hypot(q.x1+dx*t-p.x,q.y1+dy*t-p.y)<=q.w/2+0.15)return q}return null}
+const dimIn=(k,l,v,st)=>`<label class="dimf">${l}<input type="number" inputmode="decimal" step="${st||0.1}" min="0.1" data-dim="${k}" value="${st?Math.round(v):Math.round(v*100)/100}"></label>`;
+function setWallLen(w,v){const L=Math.hypot(w.x2-w.x1,w.y2-w.y1),ox=w.x2,oy=w.y2,nx=r2(w.x1+(w.x2-w.x1)/L*v),ny=r2(w.y1+(w.y2-w.y1)/L*v);
+ for(const q of S.walls){if(q===w)continue;if(Math.abs(q.x1-ox)<1e-3&&Math.abs(q.y1-oy)<1e-3){q.x1=nx;q.y1=ny}if(Math.abs(q.x2-ox)<1e-3&&Math.abs(q.y2-oy)<1e-3){q.x2=nx;q.y2=ny}}w.x2=nx;w.y2=ny}
+$('#sub').addEventListener('change',e=>{const t=e.target.closest('[data-dim]');if(!t||!sel)return;const v=parseFloat(String(t.value).replace(',','.'));if(isNaN(v)||v<=0)return;const k=t.dataset.dim;snap();
+ if(sel.k==='slab'){const q=selSlab();if(!q)return;if(k==='slw')q.w=Math.max(0.5,Math.min(40,v));if(k==='sld')q.d=Math.max(0.5,Math.min(40,v))}
+ else if(sel.k==='path'){const q=(S.paths||[]).find(x=>x.id===sel.id);if(!q)return;if(k==='pw')q.w=Math.max(0.3,Math.min(8,v));if(k==='pl'){const L=Math.hypot(q.x2-q.x1,q.y2-q.y1)||1;q.x2=r2(q.x1+(q.x2-q.x1)/L*v);q.y2=r2(q.y1+(q.y2-q.y1)/L*v)}}
+ else if(sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(!w)return;if(k==='wl'&&v>=0.2)setWallLen(w,v);if(k==='wh'){S.H=Math.max(2,Math.min(4.5,v));syncInputs();toast('La altura es la misma para todos los muros de la casa',3500)}}
+ else if(sel.k==='furn'){const f=S.furn.find(q=>q.id===sel.id),F=f&&FURN[f.k];if(!F)return;const c=x=>Math.max(0.2,Math.min(5,x));if(k==='fw')f.sx=c(v/F.w);if(k==='fd')f.sz=c(v/F.d);if(k==='fh')f.sy=c(v/100);for(const q of['sx','sy','sz'])if(f[q]&&Math.abs(f[q]-1)<0.005)delete f[q]}
+ commit(true)});
 const selSlab=()=>sel&&sel.k==='slab'&&(S.slabs||[]).find(x=>x.id===sel.id);
-function slabGrab(p,src){const q=selSlab();if(!q||(S.cur||0))return false;const h=slabPick(q,p,src==='3d'?0.55:0.4);if(!h)return false;snap();
+function slabGrab(p,src,pk){const q=selSlab();if(!q||(S.cur||0))return false;let hy=null,h=null;if(pk&&pk.slh&&pk.slh.id===q.id){h={m:pk.slh.m,i:pk.slh.i};hy=pk.slh.y}else h=slabPick(q,p,src==='3d'?0.6:0.55);if(!h)return false;snap();
+ if(hy!=null&&src==='3d'){const v=new THREE.Vector3();if(RAY.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-hy),v))p={x:v.x,y:v.z}}
  if(h.m==='pil'){q.pil=slabPils(q).slice();sel.pil={a:'pil',i:h.i}}else if(h.m==='rpil'){q.rpil=roofPils(q).slice();sel.pil={a:'rpil',i:h.i}}else if(h.m!=='mv')sel.pil=null;
- act={k:'sled',m:h.m,i:h.i,p0:{x:p.x,y:p.y},q0:{x:q.x,y:q.y,w:q.w,d:q.d},moved:false,src};sfx('tap');drawPlan();renderPanel();return true}
+ act={k:'sled',m:h.m,i:h.i,p0:{x:p.x,y:p.y},q0:{x:q.x,y:q.y,w:q.w,d:q.d},moved:false,src,hy};sfx('tap');drawPlan();renderPanel();return true}
 function slabDrag(a,p){const q=selSlab();if(!q)return;const r=v=>Math.round(v*20)/20,o=a.q0,dx=p.x-a.p0.x,dy=p.y-a.p0.y;if(!a.moved&&Math.hypot(dx,dy)<0.08)return;a.moved=true;
  if(a.m==='mv'){q.x=r(o.x+dx);q.y=r(o.y+dy)}
  else if(a.m==='e0'){const y=Math.min(o.y+o.d-0.5,r(p.y));q.y=y;q.d=r(o.y+o.d-y)}else if(a.m==='e2'){q.d=Math.max(0.5,r(p.y-o.y))}
@@ -1196,13 +1209,13 @@ function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';cons
   [[0.8,'Pincel chico'],[1.5,'Mediano'],[3,'Grande']].map(([v,n])=>`<button class="${brush===v?'on':''}" data-br="${v}">${n}</button>`).join('')+
   (G.rb?`<span class="sep"></span><span class="lbl">Plataforma de la casa ${G.pad>=0?'+':'−'}${fm(Math.abs(G.pad))} m</span><button data-act="padup">Subir 10 cm</button><button data-act="paddn">Bajar 10 cm</button>${S.padOff?'<button data-act="pad0">Automática</button>':''}`:'')+
   (G.rb&&S.ter!=='playa'?'<span class="sep"></span><span class="lbl">Nivelar el lado bajo con</span>'+[[0,'Relleno de tierra'],[1,'Muro de hormigón']].map(([v,n])=>`<button class="${(+S.baseV||0)===v?'on':''}" data-act="bv${v}">${n}</button>`).join(''):'')+`<span class="sep"></span><span class="lbl">Corte ${nf(G.cut,1)} m³ · Relleno ${nf(G.fill,1)} m³${G.fill*1.15-G.cut>0.3?` · falta ${nf(G.fill*1.15-G.cut,1)} m³`:''}</span>`+(G.rb&&G.fill*1.15-G.cut>0.3?'<button data-act="borrow">⛏ Sacar tierra del lado alto</button>':'')+(G.rb&&S.ter!=='playa'&&!S.baseV?'<button data-act="lowfill">🚜 Llevar tierra al lado bajo</button>':'')+(G.rb&&Math.abs(G.cut-G.fill*1.15)>0.5?'<button data-act="bal">⚖ Equilibrar corte y relleno</button>':'')+'<button data-act="digreset">Terreno original</button>';
- else if(sel&&sel.k==='furn'){const f=S.furn.find(q=>q.id===sel.id);if(f)h=`<span class="lbl">${FURN[f.k].n}</span><button data-act="rot">↻ Girar</button><button class="danger" data-act="del">Borrar</button>`+colBtns(f,FURNM.concat(Object.values(PAINT).map(([n,c])=>[n,c])))}
+ else if(sel&&sel.k==='furn'){const f=S.furn.find(q=>q.id===sel.id);if(f)h=`<span class="lbl">${FURN[f.k].n}</span>`+dimIn('fw','Ancho',fDim(f).w)+dimIn('fd','Fondo',fDim(f).d)+dimIn('fh','Alto %',(+f.sy||1)*100,10)+(f.sx||f.sy||f.sz?'<button data-act="fsz0">Tamaño original</button>':'')+`<button data-act="rot">↻ Girar</button><button class="danger" data-act="del">Borrar</button>`+colBtns(f,FURNM.concat(Object.values(PAINT).map(([n,c])=>[n,c])))}
  
  else if(sel&&sel.k==='walls'){const ws=S.walls.filter(w=>sel.ids.includes(w.id)),L=ws.reduce((t,w)=>t+Math.hypot(w.x2-w.x1,w.y2-w.y1),0),ms=new Set(ws.map(wMat));h=`<span class="lbl">${ws.length} muros · ${fm(L)} m</span>`+(sel.dup?`<button class="danger" data-act="wdupdel">🗑 Borrar repetidos</button><span class="lbl" style="color:var(--acc)">Sobraría ≈ ${dupExtra(dupInfo())}</span><span class="sep"></span>`:'')+selWBtns()+'<span class="sep"></span><span class="lbl">Material</span>'+Object.entries(MUROS).map(([k,[n,c]])=>sw('wmall',k,n,c,ms.size===1&&ms.has(k),1)).join('')+'<span class="sep"></span>'+'<button class="danger" data-act="wselDel">Borrar estos muros</button><button data-act="wnone">Quitar selección</button>'}
- else if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(w)h=selWBtns()+`<span class="sep"></span><span class="lbl">Muro de ${fm(Math.hypot(w.x2-w.x1,w.y2-w.y1))} m</span><button data-act="addp">+ Puerta</button><button data-act="addv">+ Ventana</button><span class="sep"></span><button class="danger" data-act="delp">Borrar pedazo (${bsize<1?bsize*100+' cm':'1 m'})</button><button class="danger" data-act="del">Borrar muro entero</button><span class="sep"></span><span class="lbl">Material</span>`+Object.entries(MUROS).map(([k,[n,c]])=>sw('wmw',k,n,c,wMat(w)===k,1)).join('')}
+ else if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(w)h=dimIn('wl','Largo',Math.hypot(w.x2-w.x1,w.y2-w.y1))+dimIn('wh','Alto',+S.H)+`<span class="sep"></span>`+selWBtns()+`<span class="sep"></span><button data-act="addp">+ Puerta</button><button data-act="addv">+ Ventana</button><span class="sep"></span><button class="danger" data-act="delp">Borrar pedazo (${bsize<1?bsize*100+' cm':'1 m'})</button><button class="danger" data-act="del">Borrar muro entero</button><span class="sep"></span><span class="lbl">Material</span>`+Object.entries(MUROS).map(([k,[n,c]])=>sw('wmw',k,n,c,wMat(w)===k,1)).join('')}
  else if(sel&&sel.k==='room'){const f=roomAt(sel);if(f)h=`<span class="lbl">${f.name?esc(f.name)+' · ':''}${nf(f.area,2)} m²</span><button data-gotool="pintar">Pintar paredes</button><button data-gotool="mueble">Amoblar</button><span class="sep"></span><span class="lbl">Piso</span>`+Object.entries(FLOOR).map(([k,[n,,bg]])=>sw('rfp',k,n,bg,(f.fp||'ceramica')===k,1)).join('')}
- else if(sel&&sel.k==='slab'){const q=(S.slabs||[]).find(x=>x.id===sel.id),kd=q&&(q.k||'radier');if(q)h=`<span class="lbl">${kd==='terraza'?'Terraza':kd==='techo'?'Techo afuera':'Radier'} ${fm(q.w)} × ${fm(q.d)} m · ${nf(q.w*q.d,1)} m²</span>`+(kd==='radier'?Object.entries(PATHM).map(([k,[n,c]])=>sw('slm',k,n,hex(c),(q.m||'hormigon')===k,1)).join(''):'')+(kd!=='techo'?`<span class="sep"></span><button class="${q.roof?'on':''}" data-act="slroof">${q.roof?'✓ Con techo':'⛱ Ponerle techo'}</button>`:'')+(q.roof||kd==='techo'?'<span class="lbl">Cubierta</span>'+Object.entries(OUTR).map(([k,[n,c]])=>sw('orm',k,n,hex(c),(q.rm||'poli')===k,1)).join(''):'')+slabPanel(q,kd)+'<span class="sep"></span><button data-act="slrot">↻ Girar 90°</button><button class="danger" data-act="del">Borrar</button><span class="lbl">Arrastra los puntos de los bordes para cambiar el tamaño, los pilares para moverlos, o el centro para moverla entera</span>'}
- else if(sel&&sel.k==='path'){const q=(S.paths||[]).find(x=>x.id===sel.id);if(q)h=`<span class="lbl">Camino de ${fm(Math.hypot(q.x2-q.x1,q.y2-q.y1))} m</span>`+Object.entries(PATHM).map(([k,[n,c]])=>sw('pm',k,n,hex(c),(q.m||'hormigon')===k,1)).join('')+'<span class="sep"></span>'+[[0.8,'Angosto'],[1.2,'Normal'],[3,'Para auto']].map(([v,n])=>`<button class="${q.w===v?'on':''}" data-pwq="${v}">${n}</button>`).join('')+'<button class="danger" data-act="del">Borrar</button>'}
+ else if(sel&&sel.k==='slab'){const q=(S.slabs||[]).find(x=>x.id===sel.id),kd=q&&(q.k||'radier');if(q)h=`<span class="lbl">${kd==='terraza'?'Terraza':kd==='techo'?'Techo afuera':'Radier'} · ${nf(q.w*q.d,1)} m²</span>`+dimIn('slw','Ancho',q.w)+dimIn('sld','Largo',q.d)+(kd==='radier'?Object.entries(PATHM).map(([k,[n,c]])=>sw('slm',k,n,hex(c),(q.m||'hormigon')===k,1)).join(''):'')+(kd!=='techo'?`<span class="sep"></span><button class="${q.roof?'on':''}" data-act="slroof">${q.roof?'✓ Con techo':'⛱ Ponerle techo'}</button>`:'')+(q.roof||kd==='techo'?'<span class="lbl">Cubierta</span>'+Object.entries(OUTR).map(([k,[n,c]])=>sw('orm',k,n,hex(c),(q.rm||'poli')===k,1)).join(''):'')+slabPanel(q,kd)+'<span class="sep"></span><button data-act="slrot">↻ Girar 90°</button><button class="danger" data-act="del">Borrar</button><span class="lbl">Arrastra los puntos de los bordes para cambiar el tamaño, los pilares para moverlos, o el centro para moverla entera</span>'}
+ else if(sel&&sel.k==='path'){const q=(S.paths||[]).find(x=>x.id===sel.id);if(q)h=`<span class="lbl">Camino</span>`+dimIn('pl','Largo',Math.hypot(q.x2-q.x1,q.y2-q.y1))+dimIn('pw','Ancho',q.w)+Object.entries(PATHM).map(([k,[n,c]])=>sw('pm',k,n,hex(c),(q.m||'hormigon')===k,1)).join('')+'<span class="sep"></span>'+[[0.8,'Angosto'],[1.2,'Normal'],[3,'Para auto']].map(([v,n])=>`<button class="${q.w===v?'on':''}" data-pwq="${v}">${n}</button>`).join('')+'<button class="danger" data-act="del">Borrar</button>'}
  else if(sel&&sel.k==='vered')h='<span class="lbl">Vereda</span>'+Object.entries(PATHM).map(([k,[n,c]])=>sw('vm',k,n,hex(c),(S.veredM||'hormigon')===k,1)).join('')+'<span class="sep"></span>'+[[0,'Quitar'],[0.6,'60 cm'],[1,'1 m'],[1.5,'1,5 m']].map(([v,n])=>`<button class="${(+S.vered||0)===v?'on':''}" data-ver="${v}">${n}</button>`).join('');
  else if(sel&&sel.k==='roof')h='<span class="lbl">Techo</span>'+Object.entries(ROOFM).map(([k,[n,c]])=>`<button class="${S.techo===k?'on':''}" data-rmat="${k}"><i style="background:${hex(c)}"></i>${n}</button>`).join('')+'<span class="sep"></span><button data-gotool="techo">Forma, inclinación y color</button>';
  if(!h&&tool==='elegir')h=selWBtns()+'<span class="lbl">o toca algo para cambiarlo</span>';
@@ -1262,6 +1275,7 @@ $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
   else if(a==='pil-'&&sel.pil){const k=sel.pil.a;q[k]=(k==='pil'?slabPils(q):roofPils(q)).slice();if(q[k].length<=2){toast('Deja al menos 2 pilares');return}q[k].splice(sel.pil.i,1);sel.pil=null;toast('Pilar quitado')}
   else if(a==='pilauto'){delete q.pil;delete q.rpil;sel.pil=null;toast('Pilares repartidos solos')}
   commit(true);return}
+ if(a==='fsz0'){const f=sel&&sel.k==='furn'&&S.furn.find(q=>q.id===sel.id);if(f){snap();delete f.sx;delete f.sy;delete f.sz;commit(true)}return}
  if(a==='slrot'){const q=sel&&sel.k==='slab'&&(S.slabs||[]).find(x=>x.id===sel.id);if(q){snap();const cx=q.x+q.w/2,cy=q.y+q.d/2;[q.w,q.d]=[q.d,q.w];q.x=r2(cx-q.w/2);q.y=r2(cy-q.d/2);commit(true)}return}
  if(a==='solera'){snap();S.solera=S.solera?0:1;commit(false);toast(S.solera?'Solerillas de hormigón en los bordes de los caminos':'Caminos sin solerillas');return}
  if(a==='slabdel'){snap();S.slabs=(S.slabs||[]).slice(0,-1);commit(true);toast('Radier quitado');return}
@@ -1426,7 +1440,7 @@ $('#bWv').addEventListener('click',()=>{const ks=Object.keys(WVN);S.wv=ks[(ks.in
 (()=>{let seen=false;try{seen=!!localStorage.getItem('casas-gest')}catch(e){}if(touchy&&!seen){$('#gest').classList.remove('hide');setTimeout(()=>$('#gest').classList.add('hide'),15000)}
  $('#bGestX').addEventListener('click',()=>{$('#gest').classList.add('hide');try{localStorage.setItem('casas-gest','1')}catch(e){}})})();
 
-const APPV=26;$('#vtag').textContent='v'+APPV;
+const APPV=27;$('#vtag').textContent='v'+APPV;
 (()=>{const el=$('#appv');let t=`Versión ${APPV} del Constructor de casas.`;const A=window.AndroidApp;
  el.innerHTML=t+(A&&A.update?' <button class="b" id="bUpd">Buscar actualización</button>':'')+' <button class="b" id="bTut">Ver tutorial</button>';$('#bTut').addEventListener('click',()=>{$('#sheet').classList.add('hide');tutStart()});if(A&&A.update)$('#bUpd').addEventListener('click',()=>{toast('Buscando actualización…');A.update()})})();
 
@@ -1454,8 +1468,9 @@ const TUT=[
  ['tool','tierra','11. Terreno y exterior','Sube o baja la tierra con el dedo. Abajo puedes <b>hacer hoyos</b> y <b>rellenarlos con cemento</b>, agregar <b>vereda</b>, <b>levantas la casa con hormigón</b>, dibujas <b>radieres o patios</b> (también de hormigón permeable), <b>terrazas</b>, <b>techos afuera</b> y <b>caminos</b> (se unen solos y pueden llevar solerillas), giras la casa y eliges el lugar en el cerro.'],
  ['tool','tierra','12. Mover tierra en un cerro','Si la casa queda en pendiente, abajo tienes <b>sacar tierra del lado alto</b> para rellenar el bajo, <b>equilibrar</b> corte y relleno, y el <b>muro de hormigón</b> que nivela la casa con menos cemento arriba y más abajo.'],
  ['tool','tierra','13. Patio, caminos y terraza','En <b>Afuera</b> arrastra el dedo para hacer un <b>radier o patio</b>, <b>caminos</b> (también de hormigón traga agua), una <b>terraza</b> o un <b>techo afuera</b>.'],
- ['tool','elegir','14. Cambiar la terraza o el techo','Con <b>Elegir</b> toca la terraza o el techo. Arrastra los <b>puntos blancos</b> para el tamaño, los <b>pilares</b> para moverlos y el centro para correrla. Abajo eliges altura, piso, baranda, escalera, inclinación y cubierta.'],
- ['#flBar',null,'15. Más pisos y escaleras','Con <b>+</b> agregas un piso (hasta 3) y con <b>1 2 3</b> eliges en cuál dibujas. Pon una <b>escalera</b> en Muebles → Estructura: arriba queda el hueco. <b>👁</b> muestra todos los pisos o solo hasta el tuyo.'],
+ ['tool','elegir','14. Cambiar la terraza o el techo','Con <b>Elegir</b> toca la terraza, el radier o el techo de afuera. Aparecen bolas: arrastra las <b>blancas</b> para el tamaño, las <b>naranjas</b> para mover cada pilar y la <b>azul</b> para correrlo entero. Abajo eliges altura, piso, baranda, escalera, inclinación y cubierta.'],
+ ['tool','elegir','15. Medidas exactas','Al elegir un muro, mueble, camino, radier, terraza o techo, abajo aparecen casillas de <b>Largo</b>, <b>Ancho</b>, <b>Fondo</b> o <b>Alto</b>. Escribe la medida y listo. Los muebles se pueden agrandar o achicar.'],
+ ['#flBar',null,'16. Más pisos y escaleras','Con <b>+</b> agregas un piso (hasta 3) y con <b>1 2 3</b> eliges en cuál dibujas. Pon una <b>escalera</b> en Muebles → Estructura: arriba queda el hueco. <b>👁</b> muestra todos los pisos o solo hasta el tuyo.'],
  ['#bPer',null,'La persona','Toca <b>🚶</b> y una persona pasea sola por la casa: sube escaleras, se sienta y se acuesta. Puedes arrastrarla. Toca otra vez para que se quede quieta.'],
  ['#bWv',null,'Ver por dentro','Este botón cambia los muros: con techo, altos, recortados o bajos, para ver el interior. Los techos y pilares de afuera también se esconden.'],
  ['#bMat',null,'Materiales y costo','Abajo a la izquierda ves la versión, los sacos de cemento y el costo. Tócalo para ver la lista de materiales, cuánto necesitas de cada cosa y un <b>costo estimado</b> con precios de tu región (📍 arriba de la lista) que puedes cambiar. Suma todos los pisos, la terraza y lo de afuera.'],
@@ -1617,7 +1632,7 @@ $('#bAuto').addEventListener('click',async()=>{if(!under){toast('Primero sube la
 
 /* ---------- 3D ---------- */
 const cv=$('#v3');let FRM=null,R=null,scene,cam,root,envG,FX,GRID,TM,TM2,sun,RAY,GM,GMD,HL,GLM;const TX={},FT={},FMC={},WT={};const O={th:-2.2,ph:0.95,r:22,tx:4,tz:4,ty:1};
-let W3=[],U3=[],envKey='';
+let W3=[],U3=[],envKey='',SLH=[];
 function mkTex(kind){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');let sd=3;const rnd=()=>(sd=sd*16807%2147483647)/2147483647;
  if(kind==='hormigon'){x.fillStyle='#a6a49e';x.fillRect(0,0,256,256);for(let i=0;i<5000;i++){x.fillStyle=`rgba(${rnd()<0.5?'0,0,0':'255,255,255'},${0.08*rnd()})`;x.fillRect(rnd()*256,rnd()*256,2,2)}x.fillStyle='rgba(0,0,0,.18)';x.fillRect(0,127,256,2);x.fillRect(127,0,2,256);[[64,64],[192,64],[64,192],[192,192]].forEach(([a,b])=>{x.beginPath();x.arc(a,b,3,0,7);x.fill()});return ftex(c)}
  if(kind==='metalcon'||kind==='sip'){x.fillStyle=kind==='sip'?'#d9cfbd':'#c9ccc9';x.fillRect(0,0,256,256);for(let y=0;y<256;y+=21){x.fillStyle='rgba(0,0,0,.16)';x.fillRect(0,y+18,256,3);x.fillStyle='rgba(255,255,255,.25)';x.fillRect(0,y,256,2)}return ftex(c)}
@@ -1817,8 +1832,8 @@ function updTerrain(){if(!TM||!G.E)return;{let h=0;const E=G.E;for(let k=0;k<E.l
 $('#selQ').value=QL;$('#selQ').addEventListener('change',e=>{try{localStorage.setItem('casas-q',e.target.value)}catch(x){}save();toast('Cambiando la calidad…');setTimeout(()=>location.reload(),400)});
 function init3D(){
  if(!window.THREE){$('#v3msg').textContent='No se pudo cargar la vista 3D. Puedes construir en el plano; los materiales funcionan igual.';return}
- try{R=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true})}catch(e){R=null;$('#v3msg').textContent='Este equipo no permite la vista 3D. Puedes construir en el plano; los materiales funcionan igual.';return}
- $('#v3msg').remove();R.setPixelRatio(Math.min(devicePixelRatio||1,QL==='alta'?2:QL==='media'?1.5:1));R.shadowMap.enabled=QL!=='baja';R.shadowMap.type=QL==='alta'?THREE.PCFSoftShadowMap:THREE.PCFShadowMap;R.shadowMap.autoUpdate=false;R.shadowMap.needsUpdate=true;R.setClearColor(0x000000,0);
+ try{R=new THREE.WebGLRenderer({canvas:cv,antialias:QL==='alta'||(devicePixelRatio||1)<1.5,alpha:true,powerPreference:'high-performance'})}catch(e){R=null;$('#v3msg').textContent='Este equipo no permite la vista 3D. Puedes construir en el plano; los materiales funcionan igual.';return}
+ $('#v3msg').remove();R.setPixelRatio(Math.min(devicePixelRatio||1,QL==='alta'?2:QL==='media'?1.3:1));R.shadowMap.enabled=QL!=='baja';R.shadowMap.type=QL==='alta'?THREE.PCFSoftShadowMap:THREE.PCFShadowMap;R.shadowMap.autoUpdate=false;R.shadowMap.needsUpdate=true;R.setClearColor(0x000000,0);
  scene=new THREE.Scene();cam=new THREE.PerspectiveCamera(45,1,0.1,600);RAY=new THREE.Raycaster();
  GM=mat(0xe2774f,{transparent:true,opacity:0.5,depthWrite:false});GMD=mat(0xe2774f,{transparent:true,opacity:0.7,side:THREE.DoubleSide,depthWrite:false});
  HL=mat(0xe2774f,{transparent:true,opacity:0.35,depthWrite:false});GLM=mat(0x8fc1dd,{transparent:true,opacity:0.4,roughness:0.1,metalness:0.2});FRM=mat(0x34383c,{roughness:0.5,metalness:0.3});
@@ -1833,7 +1848,7 @@ function init3D(){
  new ResizeObserver(size).observe($('#view'));
  const ndc=e=>{const r=cv.getBoundingClientRect();return new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1)};
  const vis=o=>{while(o){if(!o.visible)return false;o=o.parent}return true};
- const pick3=e=>{RAY.setFromCamera(ndc(e),cam);const pk={},gp=new THREE.Vector3();
+ const pick3=e=>{RAY.setFromCamera(ndc(e),cam);const pk={},gp=new THREE.Vector3();if(SLH.length){const hh=RAY.intersectObjects(SLH,false);if(hh.length)pk.slh=hh[0].object.userData}
   if(RAY.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-Y0()),gp))pk.p={x:gp.x,y:gp.z};
   if(TM.visible){const th=RAY.intersectObject(TM);if(th.length)pk.tp={x:th[0].point.x,y:th[0].point.z}}
   if(PERS&&PERS.visible&&RAY.intersectObject(PERS,true).length)pk.per=true;
@@ -1871,6 +1886,7 @@ function init3D(){
   const pk=pick3(e);let p=pk.p;
   if(act.k==='mop'){const o=S.ops.find(q=>q.id===act.id),w=o&&S.walls.find(q=>q.id===o.w);p=(pk.wall&&w&&pk.wall.w.id!==w.id)?pk.hp:((w&&wallPt(w))||pk.p)}
   else if(act.k==='dig')p=pk.tp||pk.p;
+  else if(act.k==='sled'&&act.hy!=null){const v=new THREE.Vector3();if(RAY.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-act.hy),v))p={x:v.x,y:v.z}}
   else if(act.k==='erase'){if(!pk.wall)return;const n=pk.wall;p={x:n.w.x1+(n.w.x2-n.w.x1)*n.t,y:n.w.y1+(n.w.y2-n.w.y1)*n.t}}
   tMove(p,'3d')});
  const up=e=>{P3.delete(e.pointerId);if(g3){if(!P3.size)g3=null;return}if(act)tUp()};
@@ -1924,7 +1940,7 @@ function polyGeo(pts,depth,holes){let p=pts.map(([x,y])=>new THREE.Vector2(x,-y)
 function mesh(g,m,y,par){const o=new THREE.Mesh(g,m);o.position.y=y;o.castShadow=o.receiveShadow=true;(par||root).add(o);return o}
 function segGroup(x,y,z,ang){const g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=-ang;root.add(g);return g}
 function build3D(){if(!R)return;try{
- clear(root);W3=[];U3=[];envUpdate();updTerrain();
+ clear(root);W3=[];U3=[];SLH=[];envUpdate();updTerrain();
  const P=+S.pisos||1,H=+S.H,FH=H+0.2,cur=S.cur||0,g=cur===0?G:withFloor(0,()=>G),y0=Y00(),pb=g.pad-0.35,showK=k=>S.fview!=='actual'||k<=cur;
  const capM=mc(0xe9e5dc),cm=mc(0x9d9b95),wd=mc(0x9b7650),dm=mc(0x7a4f2c),di=mc(0xd9c7a8);
  for(const f of g.rooms){if(S.ter==='playa')mesh(polyGeo(f.pts,0.2),wd,y0-0.2);else mesh(polyGeo(f.pts,y0-pb),cm,pb)}
@@ -1959,7 +1975,13 @@ function build3D(){if(!R)return;try{
      const rf=new THREE.Mesh(new THREE.BoxGeometry(ri.dir%2?ri.len:q.w+0.4,0.04,ri.dir%2?q.d+0.4:ri.len),om);rf.position.set(cx,(ri.R+ri.top)/2+0.02,cz);const ang=Math.atan(ri.t);
      if(ri.dir===0)rf.rotation.x=-ang;else if(ri.dir===2)rf.rotation.x=ang;else if(ri.dir===1)rf.rotation.z=ang;else rf.rotation.z=-ang;
      rf.castShadow=rm!=='poli';rf.receiveShadow=true;rf.userData=U;root.add(rf);top=ri.top}}
-   if(sel&&sel.k==='slab'&&sel.id===q.id)wbox(q.w+0.1,0.06,q.d+0.1,cx,top+0.05,cz,HL)}
+   if(sel&&sel.k==='slab'&&sel.id===q.id&&!(S.cur||0)){const hb=kd==='terraza'?deckTop(q,lv)+0.14:kd==='radier'?lv.top+0.16:lv.top+0.3;wbox(q.w+0.1,0.04,q.d+0.1,cx,hb-0.12,cz,HL);
+    if(!build3D.hm){const M=c=>new THREE.MeshBasicMaterial({color:c,depthTest:false,transparent:true,opacity:0.95});build3D.hm={e:M(0xffffff),p:M(0xe2774f),m:M(0x2f7fd0),s:M(0xffd54a),r:M(0xc4532d)};build3D.hg=new THREE.SphereGeometry(1,16,12)}
+    const HM=build3D.hm,H3=(x,y,z,r,u,mt)=>{const m=new THREE.Mesh(build3D.hg,mt);m.scale.setScalar(r);m.position.set(x,y,z);m.renderOrder=30;u.t='slh';u.id=q.id;u.y=y;m.userData=u;root.add(m);SLH.push(m);
+     const ring=new THREE.Mesh(build3D.hg,HM.r);ring.scale.setScalar(r*1.18);ring.position.copy(m.position);ring.renderOrder=29;root.add(ring)};
+    [[cx,q.y],[q.x+q.w,cz],[cx,q.y+q.d],[q.x,cz]].forEach(([x,z],i)=>H3(x,hb,z,0.3,{m:'e'+i},HM.e));H3(cx,hb+0.02,cz,0.3,{m:'mv'},HM.m);
+    if(kd==='terraza'){const t2=deckTop(q,lv)+0.14;slabPils(q).forEach((pp,i)=>{const[x,z]=pilXY(q,pp,0.06),on=sel.pil&&sel.pil.a==='pil'&&sel.pil.i===i;H3(x,t2,z,on?0.27:0.21,{m:'pil',i},on?HM.s:HM.p)})}
+    if(q.roof||kd==='techo')roofPils(q).forEach((pp,i)=>{const[x,z]=pilXY(q,pp,0.1),g=kd==='techo'?effH(x,z):deckTop(q,lv),on=sel.pil&&sel.pil.a==='rpil'&&sel.pil.i===i;H3(x,g+1.3,z,on?0.3:0.24,{m:'rpil',i},on?HM.s:HM.p)})}}
   const zh=y0-g.pad-0.25;if(zh>0.05&&S.ter!=='playa'){const ns=Math.ceil(zh/0.18),rs=(y0-g.pad)/ns;
    for(const o of g.ops){if(o.t!=='puerta'||!o.ext)continue;const s=o.s,L=s.len,ux=(s.x2-s.x1)/L,uy=(s.y2-s.y1)/L;let nx=-uy,ny=ux;if(roomAt({x:o.cx+nx*0.4,y:o.cy+ny*0.4})){nx=-nx;ny=-ny}
     const grp=new THREE.Group();grp.position.set(o.cx,g.pad,o.cy);grp.rotation.y=-Math.atan2(ny,nx);root.add(grp);
@@ -2018,7 +2040,7 @@ function build3D(){if(!R)return;try{
    pc(cur,s.len+ex,0,H,ms,t,full);
    cur=-ex;for(const o of ops){if(o.a<cur)continue;if(o.t==='puerta'){pc(cur,o.a,0,LH,ms,t,low);cur=o.b}}pc(cur,s.len+ex,0,LH,ms,t,low);
    if(isCur)W3.push({full,low,mx:(s.x1+s.x2)/2,my:(s.y1+s.y2)/2})}}
- for(const f of S.furn){const m=mergeG(roofCut(fModel(f.k,false,f.c),f.k));m.position.set(f.x,fY(f.x,f.y,y0),f.y);m.rotation.y=-f.r*Math.PI/180;m.userData={t:'furn',id:f.id};root.add(m);
+ for(const f of S.furn){const m=mergeG(roofCut(fModel(f.k,false,f.c),f.k));m.position.set(f.x,fY(f.x,f.y,y0),f.y);m.rotation.y=-f.r*Math.PI/180;if(f.sx||f.sy||f.sz)m.scale.set(+f.sx||1,+f.sy||1,+f.sz||1);m.userData={t:'furn',id:f.id};root.add(m);
   if(sel&&sel.k==='furn'&&sel.id===f.id){m.updateMatrixWorld(true);root.add(new THREE.BoxHelper(m,0xe2774f))}}
  if(sel&&sel.k==='walls')for(const w of S.walls){if(!sel.ids.includes(w.id))continue;const L=Math.hypot(w.x2-w.x1,w.y2-w.y1),h=S.wv==='bajos'?LH+0.05:H+0.04;wbox(L,h,0.26,L/2,h/2,0,sel.dup?(build3D.dm||(build3D.dm=mat(0xd12f2f,{transparent:true,opacity:0.5,depthWrite:false}))):HL,segGroup(w.x1,y0,w.y1,Math.atan2(w.y2-w.y1,w.x2-w.x1)))}
  if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(w){const L=Math.hypot(w.x2-w.x1,w.y2-w.y1),h=S.wv==='bajos'?LH+0.05:H+0.04;wbox(L,h,0.26,L/2,h/2,0,HL,segGroup(w.x1,y0,w.y1,Math.atan2(w.y2-w.y1,w.x2-w.x1)))}}
@@ -2150,7 +2172,7 @@ function perPlan(tx,tz,ignore,sx,sz){if(sx==null){sx=PER.x;sz=PER.z}const C=0.25
  for(const s of G.segs||[]){const n=Math.ceil(s.len/0.06),ux=(s.x2-s.x1)/s.len,uz=(s.y2-s.y1)/s.len;for(let k=0;k<=n;k++){const t=s.len*k/n;if(doors.some(o=>o.s===s&&t>o.a+0.02&&t<o.b-0.02))continue;const px=s.x1+ux*t,pz=s.y1+uz*t;mark(px,pz);mark(px-uz*0.1,pz+ux*0.1);mark(px+uz*0.1,pz-ux*0.1)}}
  if(FLN()>0&&G.rooms.length)for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){const x=x0+(i+0.5)*C,z=z0+(j+0.5)*C;if(!G.rooms.some(f=>G.inPoly(x,z,f.pts)))bl[j*nx+i]=1}
  if(FLN()>0)for(const r of stairRects(FLN()-1)){const xs2=r.pts.map(p=>p[0]),zs2=r.pts.map(p=>p[1]);for(let x=Math.min(...xs2);x<=Math.max(...xs2);x+=C/2)for(let z=Math.min(...zs2);z<=Math.max(...zs2);z+=C/2)mark(x,z)}
- for(const f of S.furn){const F=FURN[f.k];if(!F||(F.wall&&!STAIRS.has(f.k))||NOBLOCK.has(f.k)||f===ignore)continue;const a=f.r*Math.PI/180,ca=Math.cos(a),sa=Math.sin(a),hw=F.w/2+0.08,hd=F.d/2+0.08,R=Math.hypot(hw,hd);
+ for(const f of S.furn){const F=fDim(f);if(!F||(F.wall&&!STAIRS.has(f.k))||NOBLOCK.has(f.k)||f===ignore)continue;const a=f.r*Math.PI/180,ca=Math.cos(a),sa=Math.sin(a),hw=F.w/2+0.08,hd=F.d/2+0.08,R=Math.hypot(hw,hd);
   for(let x=f.x-R;x<=f.x+R;x+=C/2)for(let z=f.y-R;z<=f.y+R;z+=C/2){const dx=x-f.x,dz=z-f.y,lx=dx*ca+dz*sa,lz=-dx*sa+dz*ca;if(Math.abs(lx)<=hw&&Math.abs(lz)<=hd)mark(x,z)}}
  {const ck=[x0.toFixed(2),z0.toFixed(2),nx,nz,typeof FLN==='function'?FLN():0].join();if(perCG&&perCG.k===ck)cost.set(perCG.c);else{for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){const x=x0+(i+0.5)*C,z=z0+(j+0.5)*C,k=j*nx+i;if(pathAt({x,y:z}))cost[k]=0.45;else if(slabAt({x,y:z}))cost[k]=0.7}perCG={k:ck,c:cost.slice()}}}
  const free=k=>k>=0&&!bl[k],cen=k=>({x:x0+(k%nx+0.5)*C,z:z0+(Math.floor(k/nx)+0.5)*C});
