@@ -1,0 +1,52 @@
+[
+ {
+  "id": "cabana",
+  "n": "Cabaña de campo con terraza",
+  "d": "Madera, techo de teja y terraza techada mirando al campo.",
+  "A": 24,
+  "dorm": 1,
+  "pisos": 1,
+  "img": "cabana.jpg",
+  "file": "cabana.json"
+ },
+ {
+  "id": "familia",
+  "n": "Casa familiar con quincho",
+  "d": "2 dormitorios, patio de adoquín, quincho y estacionamiento techado.",
+  "A": 60,
+  "dorm": 2,
+  "pisos": 1,
+  "img": "familia.jpg",
+  "file": "familia.json"
+ },
+ {
+  "id": "dospisos",
+  "n": "Casa de dos pisos",
+  "d": "4 dormitorios, 2 baños y escalera. Toca 1 o 2 abajo para ver cada piso.",
+  "A": 120,
+  "dorm": 4,
+  "pisos": 2,
+  "img": "dospisos.jpg",
+  "file": "dospisos.json"
+ },
+ {
+  "id": "cerro",
+  "n": "Casa en el cerro",
+  "d": "Base de hormigón que la nivela y terraza con techo para mirar el paisaje.",
+  "A": 60,
+  "dorm": 2,
+  "pisos": 1,
+  "img": "cerro.jpg",
+  "file": "cerro.json"
+ },
+ {
+  "id": "playa",
+  "n": "Casa de playa",
+  "d": "Sobre pilotes, terraza con baranda de vidrio y toldo para la sombra.",
+  "A": 24,
+  "dorm": 1,
+  "pisos": 1,
+  "img": "playa.jpg",
+  "file": "playa.json"
+ }
+]
