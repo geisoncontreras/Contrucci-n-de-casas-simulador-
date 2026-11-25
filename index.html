@@ -369,7 +369,7 @@ const TOOLS=[['cuarto','Habitación','Arrastra en diagonal: salen 4 muros.'],
  ['muro','Muro','Arrastra de un punto a otro.'],
  ['puerta','Puerta','Elige el tipo y toca un muro.'],
  ['ventana','Ventana','Elige el tipo y toca un muro.'],
- ['techo','Techo','Elige forma y material.'],
+ ['techo','Techo','Toca «Poner techo» cuando quieras.'],
  ['tierra','Afuera','Terreno, patio, caminos y terraza.'],
  ['mueble','Muebles','Elige y toca el piso.'],
  ['pintar','Pintar','Elige un color y toca una pared.'],
@@ -533,11 +533,11 @@ let S,G,VB,tool='cuarto',sel=null,act=null,prev=null,ghost=null,undo=[],photo=nu
 let cal=null,UT=null;
 let doorK='simple',winK='estandar',cat='Dormitorio',fk='cama2',frot=0,paint='salvia',floorK='madera',tmode='subir',brush=1.5,pathW=1.2,fmode='cuarto',fsize=0.5;
 const ul={w:10,o:50,x:0,y:0};
-const fix=o=>{o.pisos=Math.max(1,Math.min(3,+o.pisos||1));if(!Array.isArray(o.lv)||o.lv.length!==o.pisos){const old=Array.isArray(o.lv)?o.lv:[];o.lv=[];for(let i=0;i<o.pisos;i++)o.lv.push(old[i]||(i?copyFloor(i===1||!o.lv[i-1]?o:o.lv[i-1]):null))}o.cur=Math.min(+o.cur||0,o.pisos-1);if(o.cur&&!o.lv[o.cur])o.cur=0;o.lv[o.cur]=null;o.furn=Array.isArray(o.furn)?o.furn:[];o.dig=o.dig&&typeof o.dig==='object'?o.dig:{};o.labels=o.labels||[];o.ops=o.ops||[];o.padOff=+o.padOff||0;if(!PAINT[o.fach]&&o.fach!=='visto')o.fach='visto';return o};
+const fix=o=>{if(o.roofOn==null)o.roofOn=(o.walls&&o.walls.length)?1:0;o.pisos=Math.max(1,Math.min(3,+o.pisos||1));if(!Array.isArray(o.lv)||o.lv.length!==o.pisos){const old=Array.isArray(o.lv)?o.lv:[];o.lv=[];for(let i=0;i<o.pisos;i++)o.lv.push(old[i]||(i?copyFloor(i===1||!o.lv[i-1]?o:o.lv[i-1]):null))}o.cur=Math.min(+o.cur||0,o.pisos-1);if(o.cur&&!o.lv[o.cur])o.cur=0;o.lv[o.cur]=null;o.furn=Array.isArray(o.furn)?o.furn:[];o.dig=o.dig&&typeof o.dig==='object'?o.dig:{};o.labels=o.labels||[];o.ops=o.ops||[];o.padOff=+o.padOff||0;if(!PAINT[o.fach]&&o.fach!=='visto')o.fach='visto';return o};
 try{const j=JSON.parse(localStorage.getItem('casas-v2'));if(j&&Array.isArray(j.walls))S=fix(Object.assign({},DEF,j))}catch(e){}
-if(!S)S=fix(Object.assign({},DEF,TPL.dos()));
+if(!S)S=fix(Object.assign({},DEF,TPL.dos(),{roofOn:0}));
 const save=()=>{try{localStorage.setItem('casas-v2',JSON.stringify(S))}catch(e){}};
-const snap=()=>{undo.push(JSON.stringify({conc:S.conc,ftile:S.ftile,paths:S.paths,vered:S.vered,zoc:S.zoc,baseV:S.baseV,bank:S.bank,slabs:S.slabs,solera:S.solera,lv:S.lv,cur:S.cur,pisos:S.pisos,walls:S.walls,ops:S.ops,labels:S.labels,furn:S.furn,fach:S.fach,dig:S.dig,padOff:S.padOff,terR:S.terR,terX:S.terX,terZ:S.terZ}));if(undo.length>60)undo.shift();$('#bUndo').disabled=false};
+const snap=()=>{undo.push(JSON.stringify({conc:S.conc,ftile:S.ftile,paths:S.paths,vered:S.vered,zoc:S.zoc,roofOn:S.roofOn,baseV:S.baseV,bank:S.bank,slabs:S.slabs,solera:S.solera,lv:S.lv,cur:S.cur,pisos:S.pisos,walls:S.walls,ops:S.ops,labels:S.labels,furn:S.furn,fach:S.fach,dig:S.dig,padOff:S.padOff,terR:S.terR,terX:S.terX,terZ:S.terZ}));if(undo.length>60)undo.shift();$('#bUndo').disabled=false};
 const toast=(m,ms)=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.k);toast.k=setTimeout(()=>t.classList.remove('on'),ms||2400)};
 const overlaps=()=>null;
 
@@ -737,7 +737,7 @@ function calc1(){
    add(ES,'Clavos y tornillos'+tag,up(wA*0.05*f),'kg')}}
  if(P>1){if(heavyL>=LT/2){hc+=A*0.12;malla+=A;add(ES,'Losa de entrepiso 12 cm',m1(A*0.12),'m³')}else{add(ES,'Vigas de entrepiso 2"×8" × 3,2 m',up(A/0.4/3.2*1.1*f),'u','Cada 40 cm');add(ES,'OSB 18 mm (entrepiso)',up(A/2.98*f),'u')}}
  let rA=0,cab=0;
- if(TOP){
+ if(TOP&&S.roofOn){
  if(S.roofMode!=='plano'){const RR=roofRects(g),m=S.roofMode,pt=roofPt();let sp=0,ln=0,raf=0;
   for(const r of RR){let a=Math.min(r.w,r.d),b=Math.max(r.w,r.d);if(m!=='cuatro'&&(S.roofO||0)%2)[a,b]=[b,a];const half=a/2+0.5,pl=m==='cuatro'?2*half*Math.hypot(1,pt):profLen(roofProf(m,half));
    rA+=m==='cuatro'?(a+1)*(b+1)*Math.hypot(1,pt):pl*(b+1);cab+=m==='cuatro'?Math.max(0,b-a)+4*Math.hypot(half,half,half*pt):m==='una'?0:b+1;if(a>sp){sp=a;raf=pl/2}ln+=b}
@@ -1170,7 +1170,7 @@ new ResizeObserver(()=>{const W=plan.clientWidth,Hh=plan.clientHeight;if(!W||!Hh
 $('#tools').innerHTML=TOOLS.map(([k,l,tip])=>`<button class="tool" data-tool="${k}" data-g="${(TSUB[k]||['x'])[0]}" title="${esc(tip)}"><span class="ti"><svg viewBox="0 0 24 24">${ICO[k]}</svg></span>${l}<span class="ts">${(TSUB[k]||['',''])[1]}</span></button>`).join('')+'<span class="gap"></span><label class="tool" id="bUp" title="Subir foto del plano"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg><span id="bUpT">Subir plano</span><input type="file" id="fPlan2" accept="image/*" hidden></label>';
 const touchy=matchMedia('(pointer:coarse)').matches;
 const BUILD=['cuarto','muro','puerta','ventana','mueble'];
-function setTool(k){if(k==='tierra'&&(S.cur||0)!==0){goFloor(0,1);toast('El terreno y el exterior se arman desde el piso 1',3500)}tool=k;if(k!=='elegir')multiW=false;if(sel&&!['elegir','puerta','ventana','borrar'].includes(k)&&!(k==='mueble'&&sel.k==='furn'))sel=null;if(k==='techo'&&S.wv!=='techo'){S.wv='techo';save();ui()}act=null;prev=null;ghost=null;hover.k='';$$('.tool[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===k));const T=TOOLS.find(t=>t[0]===k);
+function setTool(k){if(k==='tierra'&&(S.cur||0)!==0){goFloor(0,1);toast('El terreno y el exterior se arman desde el piso 1',3500)}tool=k;if(k!=='elegir')multiW=false;if(sel&&!['elegir','puerta','ventana','borrar'].includes(k)&&!(k==='mueble'&&sel.k==='furn'))sel=null;if(k==='techo'&&S.roofOn&&S.wv!=='techo'){S.wv='techo';save();ui()}act=null;prev=null;ghost=null;hover.k='';$$('.tool[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===k));const T=TOOLS.find(t=>t[0]===k);
  $('#hint').innerHTML=`<b>${T[1]}:</b> ${T[2]}`+(touchy?'':' <span style="opacity:.75">· Clic derecho gira, rueda acerca.</span>');
  plan.style.cursor=k==='mano'?'grab':k==='elegir'||k==='borrar'?'pointer':'crosshair';cv.style.cursor=k==='mano'?'grab':k==='elegir'||k==='borrar'?'pointer':'crosshair';
  if(k!=='elegir'&&k!=='mueble'&&sel){sel=null;renderPanel()}
@@ -1190,7 +1190,7 @@ function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';cons
   Object.entries(FURN).filter(([,F])=>F.c===cat).map(([k,F])=>{const th=typeof fThumb==='function'?fThumb(k):'';return`<button class="card${k===fk?' on':''}" data-fk="${k}">${th?`<img src="${th}" alt="">`:`<span class="fic" style="background:${F.pc}"></span>`}<b>${F.n}</b><small>${fmm(F.w)} × ${fmm(F.d)} m</small></button>`}).join('')+'</div>'}
  const doorCards=cur=>Object.entries(DOOR).map(([k,D])=>`<button class="card${k===cur?' on':''}" data-door="${k}">${doorSvg(k)}<b>${D.n}</b><small>${fmm(D.wd)} × ${fmm(D.h)} m</small></button>`).join('');
  if(tool==='mueble'){}
- else if(tool==='techo')h=Object.entries(ROOF).map(([k,R])=>`<button class="card${S.roofMode===k?' on':''}" data-roof="${k}">${roofSvg(k)}<b>${R.n}</b></button>`).join('')+'<span class="sep"></span>'+
+ else if(tool==='techo')h=`<button class="${S.roofOn?'on':'pri'}" data-act="roofon" style="flex:none;font-weight:700">${S.roofOn?'✓ Con techo · quitar':'🏠 Poner techo'}</button><span class="sep"></span>`+Object.entries(ROOF).map(([k,R])=>`<button class="card${S.roofMode===k?' on':''}" data-roof="${k}">${roofSvg(k)}<b>${R.n}</b></button>`).join('')+'<span class="sep"></span>'+
   Object.entries(ROOFM).map(([k,[n,c]])=>`<button class="${S.techo===k?'on':''}" data-rmat="${k}"><i style="background:${hex(c)}"></i>${n}</button>`).join('')+
   (S.roofMode!=='plano'?'<span class="sep"></span><span class="lbl">Inclinación</span>'+[10,15,20,25,30,35,45].map(v=>`<button class="${(+S.roofP||20)===v?'on':''}" data-rp="${v}">${v}°</button>`).join('')+(S.roofMode!=='cuatro'?`<button data-act="rgir">↻ Girar techo</button>`:'')+'<span class="sep"></span>'+`<button class="${S.roofF?'on':''}" data-act="rforma">Seguir forma de la casa</button>`+[['chim','Chimenea'],['sky','Tragaluces'],['can','Canaletas']].map(([k,n])=>`<button class="${(S.roofX||{})[k]?'on':''}" data-rx="${k}">${(S.roofX||{})[k]?'✓ ':'+ '}${n}</button>`).join(''):'')+
   '<span class="sep"></span><span class="lbl">Color</span>'+ROOFC.map(([n,c])=>sw('rc',c==null?'':c,n,c==null?'linear-gradient(135deg,#ddd 50%,#999 50%)':hex(c),(S.roofC==null?null:S.roofC)===c)).join('');
@@ -1225,15 +1225,15 @@ function renderSub(){const el=$('#sub');el.classList.remove('two');let h='';cons
  el.innerHTML=h}
 $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
  if(d.cat){cat=d.cat;fk=Object.keys(FURN).find(k=>FURN[k].c===cat);renderSub();return}
- if(d.roof){snap();S.roofMode=d.roof;if(S.wv!=='techo')S.wv='techo';syncInputs();commit(false);toast('Techo: '+ROOF[d.roof].n);return}
+ if(d.roof){snap();S.roofMode=d.roof;S.roofOn=1;if(S.wv!=='techo')S.wv='techo';syncInputs();commit(false);toast('Techo: '+ROOF[d.roof].n);return}
  if(d.ver!==undefined){snap();S.vered=+d.ver;commit(false);toast(+d.ver?`Vereda de ${fm(+d.ver)} m alrededor de la casa`:'Sin vereda');return}
  if(d.zoc!==undefined){snap();S.zoc=+d.zoc;commit(false);O.ty=Y0()+0.6;toast(+d.zoc?`Casa levantada ${fm(+d.zoc)} m sobre una base de hormigón`:'Casa a nivel normal');return}
  if(d.pw){pathW=+d.pw;tmode='camino';renderSub();toast('Arrastra sobre el terreno para dibujar el camino');return}
- if(d.rx){snap();S.roofX=Object.assign({},S.roofX||{});S.roofX[d.rx]=!S.roofX[d.rx];if(S.wv!=='techo')S.wv='techo';commit(false);toast(b.textContent.replace(/^[✓+] /,'')+(S.roofX[d.rx]?' agregada':' quitada'));return}
- if(d.rp){snap();S.roofP=+d.rp;if(S.wv!=='techo')S.wv='techo';commit(false);toast('Inclinación '+d.rp+'°');return}
- if(d.rc!==undefined){snap();S.roofC=d.rc===''?null:+d.rc;if(S.wv!=='techo')S.wv='techo';commit(false);toast('Color del techo: '+b.textContent);return}
+ if(d.rx){snap();S.roofX=Object.assign({},S.roofX||{});S.roofX[d.rx]=!S.roofX[d.rx];S.roofOn=1;if(S.wv!=='techo')S.wv='techo';commit(false);toast(b.textContent.replace(/^[✓+] /,'')+(S.roofX[d.rx]?' agregada':' quitada'));return}
+ if(d.rp){snap();S.roofP=+d.rp;S.roofOn=1;if(S.wv!=='techo')S.wv='techo';commit(false);toast('Inclinación '+d.rp+'°');return}
+ if(d.rc!==undefined){snap();S.roofC=d.rc===''?null:+d.rc;S.roofOn=1;if(S.wv!=='techo')S.wv='techo';commit(false);toast('Color del techo: '+b.textContent);return}
  if(d.oc!==undefined){const o=sel&&sel.k==='op'&&S.ops.find(q=>q.id===sel.id),fu=sel&&sel.k==='furn'&&S.furn.find(q=>q.id===sel.id),it=o||fu;if(it){snap();if(d.oc==='')delete it.c;else it.c=+d.oc;commit(true);toast('Color: '+b.textContent)}return}
- if(d.rmat){snap();S.techo=d.rmat;if(S.wv!=='techo')S.wv='techo';syncInputs();commit(false);toast('Cubierta: '+ROOFM[d.rmat][0]);return}
+ if(d.rmat){snap();S.techo=d.rmat;S.roofOn=1;if(S.wv!=='techo')S.wv='techo';syncInputs();commit(false);toast('Cubierta: '+ROOFM[d.rmat][0]);return}
  if(d.door){const o=sel&&sel.k==='op'&&S.ops.find(q=>q.id===sel.id);
   if(o&&o.t==='puerta'){snap();o.v=d.door;const w=S.walls.find(q=>q.id===o.w),L=w?Math.hypot(w.x2-w.x1,w.y2-w.y1):9;o.wd=r2(Math.min(DOOR[d.door].wd,L-0.2));o.pos=r2(clamp(o.pos,o.wd/2,L-o.wd/2));doorK=d.door;commit(true);toast(DOOR[d.door].n)}
   else{doorK=d.door;if(tool!=='puerta')setTool('puerta');else renderSub();toast(`${DOOR[d.door].n}: ahora toca un muro`)}return}
@@ -1290,11 +1290,12 @@ $('#sub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
   sel=null;multiW=false;commit(true);sfx('del');toast(n?'Muros repetidos borrados. Puedes deshacer con ↶':'No había repetidos');return}
  if(a==='wselDel'){if(!sel||sel.k!=='walls')return;snap();const ids=sel.ids.slice();killWalls(ids);sel=null;multiW=false;commit(true);sfx('del');toast(`${ids.length} muros borrados. Puedes deshacer con ↶`);return}
  if(a==='wnone'){sel=null;multiW=false;refreshSel();return}
- if(a==='rforma'){snap();S.roofF=S.roofF?0:1;if(S.wv!=='techo')S.wv='techo';commit(false);toast(S.roofF?'El techo sigue la forma de la casa':'Un solo techo sobre toda la casa');return}
+ if(a==='roofon'){snap();S.roofOn=S.roofOn?0:1;if(S.roofOn)S.wv='techo';commit(false);renderSub();sfx(S.roofOn?'build':'del');toast(S.roofOn?'Techo puesto':'Casa sin techo');return}
+ if(a==='rforma'){snap();S.roofF=S.roofF?0:1;S.roofOn=1;if(S.wv!=='techo')S.wv='techo';commit(false);toast(S.roofF?'El techo sigue la forma de la casa':'Un solo techo sobre toda la casa');return}
  if(a==='hrot'){rotHouse();return}
  if(/^(tr[+-]|tz[ud]|tx[lr]|t0)$/.test(a)){snap();if(a==='t0'){S.terR=0;S.terX=0;S.terZ=0;S.dig={}}else if(a[1]==='r')S.terR=((+S.terR||0)+(a[2]==='+'?15:-15)+360)%360;else{const st=3,up_=S.ter==='cerro';if(a==='tzu')S.terZ=(+S.terZ||0)+st;if(a==='tzd')S.terZ=(+S.terZ||0)-st;if(a==='txl')S.terX=(+S.terX||0)-st;if(a==='txr')S.terX=(+S.terX||0)+st}
   S.padOff=0;commit(false);O.ty=Y0()+0.6;camUp();toast(a==='t0'?'Terreno en su lugar original':a[1]==='r'?`Terreno girado ${S.terR}°`:'Casa movida en el cerro: nivel '+(G.pad>=0?'+':'−')+fm(Math.abs(G.pad))+' m');return}
- if(a==='rgir'){snap();S.roofO=((S.roofO||0)+1)%4;if(S.wv!=='techo')S.wv='techo';commit(false);toast('Techo girado');return}
+ if(a==='rgir'){snap();S.roofO=((S.roofO||0)+1)%4;S.roofOn=1;if(S.wv!=='techo')S.wv='techo';commit(false);toast('Techo girado');return}
  if(a==='padup'||a==='paddn'||a==='pad0'){snap();S.padOff=a==='pad0'?0:r2((S.padOff||0)+(a==='padup'?0.1:-0.1));commit(false);O.ty=Y0()+0.6;camUp();return}
  if(a==='borrow'){doBorrow();return}
  if(a==='lowfill'){doLowFill();return}
@@ -1322,7 +1323,7 @@ function rotHouse(){if(!S.walls.length){toast('Primero dibuja la casa');return}s
 function tilePaint(p,a){const n=fsize>=1?2:1,i0=Math.floor(p.x/TS),j0=Math.floor(p.y/TS),bi=n>1?i0-(i0%2+2)%2:i0,bj=n>1?j0-(j0%2+2)%2:j0,id=bi+','+bj;if(a.last===id)return;a.last=id;let ch=0;
  for(let i=bi;i<bi+n;i++)for(let j=bj;j<bj+n;j++){const k=i+','+j,c=tileC(k);if(!G.rooms.some(f=>G.inPoly(c.cx,c.cy,f.pts)))continue;if(floorK==='quitar'){if(S.ftile[k]){delete S.ftile[k];ch=1}}else if(S.ftile[k]!==floorK){S.ftile[k]=floorK;ch=1}}
  if(ch){a.n=(a.n||0)+1;commit(false)}}
-function doUndo(){const j=undo.pop();if(!j)return;const o=JSON.parse(j);S.walls=o.walls;S.ops=o.ops;S.labels=o.labels;S.furn=o.furn||[];S.fach=o.fach||'visto';S.dig=o.dig||{};S.conc=o.conc||{};S.padOff=o.padOff||0;S.terR=o.terR||0;S.ftile=o.ftile||{};S.paths=o.paths||[];S.vered=o.vered||0;S.zoc=o.zoc||0;if(o.lv){S.lv=o.lv;S.cur=o.cur||0;S.pisos=o.pisos||1}S.baseV=o.baseV||0;S.bank=o.bank||0;S.slabs=o.slabs||[];S.solera=o.solera||0;S.terX=o.terX||0;S.terZ=o.terZ||0;sel=null;$('#bUndo').disabled=!undo.length;commit(true)}
+function doUndo(){const j=undo.pop();if(!j)return;const o=JSON.parse(j);S.walls=o.walls;S.ops=o.ops;S.labels=o.labels;S.furn=o.furn||[];S.fach=o.fach||'visto';S.dig=o.dig||{};S.conc=o.conc||{};S.padOff=o.padOff||0;S.terR=o.terR||0;S.ftile=o.ftile||{};S.paths=o.paths||[];S.vered=o.vered||0;S.zoc=o.zoc||0;S.roofOn=o.roofOn||0;if(o.lv){S.lv=o.lv;S.cur=o.cur||0;S.pisos=o.pisos||1}S.baseV=o.baseV||0;S.bank=o.bank||0;S.slabs=o.slabs||[];S.solera=o.solera||0;S.terX=o.terX||0;S.terZ=o.terZ||0;sel=null;$('#bUndo').disabled=!undo.length;commit(true)}
 $('#bUndo').addEventListener('click',doUndo);$('#bUndo2').addEventListener('click',doUndo);
 function renderPanel(){const el=$('#rp');let h='';
  if(sel&&sel.k==='wall'){const w=S.walls.find(q=>q.id===sel.id);if(!w){sel=null;return renderPanel()}
@@ -1373,7 +1374,7 @@ const bind=(id,k,num)=>{const el=$(id);el.value=S[k];el.addEventListener('change
 $('#sP').addEventListener('change',e=>setPisos(+e.target.value));bind('#sH','H',1);bind('#sM','muro');$('#sM').addEventListener('change',()=>{snap();for(const w of S.walls)delete w.m;wallMk=null;commit(true);toast('Todos los muros: '+(MUROS[S.muro]||['?'])[0].toLowerCase())});bind('#sT','techo');bind('#sR','roofMode');bind('#sW','merma',1);bind('#sSnap','snap');
 function syncInputs(){$('#sP').value=S.pisos;$('#sH').value=S.H;$('#sM').value=S.muro;$('#sT').value=S.techo;$('#sR').value=S.roofMode;$('#sW').value=S.merma;$('#sSnap').value=S.snap}
 /* proyecto nuevo: todo desde cero (terreno, exterior, pisos, terrazas, persona); se guardan solo región, sonido y precios */
-function freshProject(extra){const keep={region:S.region,snd:S.snd,prices:S.prices,ter:S.ter};for(const k of Object.keys(S))delete S[k];Object.assign(S,JSON.parse(JSON.stringify(DEF)),keep,extra||{});S.lv=[null];S.cur=0;S.pisos=1;
+function freshProject(extra){const keep={region:S.region,snd:S.snd,prices:S.prices,ter:S.ter,roofOn:0};for(const k of Object.keys(S))delete S[k];Object.assign(S,JSON.parse(JSON.stringify(DEF)),keep,extra||{});S.lv=[null];S.cur=0;S.pisos=1;
  if(typeof PER!=='undefined'){PER.auto=false;PER.path=[];PER.mode='idle';PER.fl=0;PER.x=null;PER.y=null}if(typeof syncInputs==='function')try{syncInputs()}catch(e){}}
 $('#bNew').addEventListener('click',()=>{snap();freshProject(TPL.vacio());if(photo&&$('#bNoPhoto'))$('#bNoPhoto').click();if(under&&$('#bNoPlan'))$('#bNoPlan').click();sel=null;commit(true);fitVB();drawPlan();setTool('cuarto');toast('Proyecto nuevo, todo desde cero. ↶ deshace');$('#stage').scrollIntoView({block:'center'})});
 $('#bNew2').addEventListener('click',()=>$('#bNew').click());
@@ -1428,7 +1429,7 @@ $('#dlbar').addEventListener('click',e=>{const b=e.target.closest('[data-dl]');i
   dlSave('materiales-casa.csv','﻿Sección;Material;Cantidad;Unidad;Precio unitario CLP;Subtotal CLP;Nota\n'+Object.keys(M).filter(s=>s[0]!=='_').flatMap(s=>M[s].map(r=>{const pu=priceOf(r[0]);return[s,r[0],String(r[1]).replace('.',','),r[2],pu==null?'en totales':Math.round(pu),pu?Math.round(pu*r[1]):'',r[3]].map(q).join(';')})).join('\n'))}
  else if(k==='json')dlSave('mi-casa.json',JSON.stringify({app:'constructor-casas',v:3,...S},null,1))});
 $('#fJson').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{const j=JSON.parse(t);if(!Array.isArray(j.walls))throw 0;
- snap();for(const k of Object.keys(DEF))if(j[k]!=null)S[k]=j[k];S.walls=j.walls;S.ops=j.ops||[];S.labels=j.labels||[];S.furn=j.furn||[];S.dig=j.dig||{};fix(S);sel=null;syncInputs();commit(true);fitVB();drawPlan();resetCam();toast('Proyecto abierto')}).catch(()=>toast('Ese archivo no es un proyecto válido'));e.target.value=''});
+ snap();for(const k of Object.keys(DEF))if(j[k]!=null)S[k]=j[k];S.roofOn=j.roofOn;S.walls=j.walls;S.ops=j.ops||[];S.labels=j.labels||[];S.furn=j.furn||[];S.dig=j.dig||{};fix(S);sel=null;syncInputs();commit(true);fitVB();drawPlan();resetCam();toast('Proyecto abierto')}).catch(()=>toast('Ese archivo no es un proyecto válido'));e.target.value=''});
 $('#bCopy').addEventListener('click',()=>{if(!M){toast('Cierra al menos una habitación');return}if(window.AndroidApp&&AndroidApp.copy){AndroidApp.copy('Lista de materiales\n\n'+matText());toast('Lista copiada');return}navigator.clipboard.writeText('Lista de materiales\n\n'+matText()).then(()=>toast('Lista copiada'),()=>toast('No se pudo copiar'))});
 
 /* menú y barra superior */
@@ -1470,7 +1471,7 @@ const TUT=[
  ['#view','mano','7. Mover la cámara','<b>Dos dedos</b>: girar en todos los ángulos. <b>Pellizcar</b>: acercar o alejar. <b>Tres dedos</b> o la herramienta <b>Mover</b>: correr la vista con la mano.'],
  ['tool','mueble','8. Muebles','Elige la categoría y el mueble, y tócalo sobre el piso. En <b>Jardín</b> tienes pasto, flores, cercos, árboles, huerta y más para afuera. Arrástralo para moverlo y usa <b>↻ Girar</b>.'],
  ['tool','pintar','9. Pintar','Elige un color y toca una habitación, la fachada, un mueble, una puerta o una ventana. Con <b>Piso</b> cambias el piso de toda una habitación o <b>por cuadros</b>, arrastrando el dedo (por ejemplo cerámica en la cocina y madera en el living).'],
- ['tool','techo','10. Techo','Elige la forma, el material, la <b>inclinación</b> y el color. Puedes girar el techo, hacer que siga la forma de la casa y agregar chimenea, tragaluces y canaletas.'],
+ ['tool','techo','10. Techo','El techo <b>no se pone solo</b>: tócalo con <b>🏠 Poner techo</b> cuando termines los muros (y quítalo cuando quieras). Elige la forma, el material, la <b>inclinación</b> y el color. Puedes girar el techo, hacer que siga la forma de la casa y agregar chimenea, tragaluces y canaletas.'],
  ['tool','tierra','11. Terreno y exterior','Sube o baja la tierra con el dedo. Abajo puedes <b>hacer hoyos</b> y <b>rellenarlos con cemento</b>, agregar <b>vereda</b>, <b>levantas la casa con hormigón</b>, dibujas <b>radieres o patios</b> (también de hormigón permeable), <b>terrazas</b>, <b>techos afuera</b> y <b>caminos</b> (se unen solos y pueden llevar solerillas), giras la casa y eliges el lugar en el cerro.'],
  ['tool','tierra','12. Mover tierra en un cerro','Si la casa queda en pendiente, abajo tienes <b>sacar tierra del lado alto</b> para rellenar el bajo, <b>equilibrar</b> corte y relleno, y el <b>muro de hormigón</b> que nivela la casa con menos cemento arriba y más abajo.'],
  ['tool','tierra','13. Patio, caminos y terraza','En <b>Afuera</b> arrastra el dedo para hacer un <b>radier o patio</b>, <b>caminos</b> (también de hormigón traga agua), una <b>terraza</b> o un <b>techo afuera</b>.'],
@@ -2057,7 +2058,7 @@ function build3D(){if(!R)return;try{
  for(let k=0;k<P;k++){if(!showK(k)){GFL[k]=null;continue}const n0=root.children.length;withFloor(k,()=>story(k));
   if(k!==cur)for(let i=n0;i<root.children.length;i++){const ch=root.children[i];ch.traverse(o=>{if(o.userData&&o.userData.t)o.userData={}});if(k>cur)U3.push(ch)}}
  if(showK(P-1)){const n0=root.children.length;withFloor(P-1,()=>{const g=G,y0=Y00()+(P-1)*FH;
- if(S.wv==='techo'&&g.rooms.length){const rb=y0+H,RM=ROOFM[S.techo]||ROOFM.zinc,rm=mat(S.roofC!=null?S.roofC:RM[1],{side:THREE.DoubleSide,metalness:S.techo==='zinc'?0.35:0,roughness:S.techo==='zinc'?0.5:S.techo==='poli'?0.2:0.9,transparent:S.techo==='poli',opacity:S.techo==='poli'?0.55:1});
+ if(S.wv==='techo'&&S.roofOn&&g.rooms.length){const rb=y0+H,RM=ROOFM[S.techo]||ROOFM.zinc,rm=mat(S.roofC!=null?S.roofC:RM[1],{side:THREE.DoubleSide,metalness:S.techo==='zinc'?0.35:0,roughness:S.techo==='zinc'?0.5:S.techo==='poli'?0.2:0.9,transparent:S.techo==='poli',opacity:S.techo==='poli'?0.55:1});
   const md=S.roofMode;
   if(md!=='plano'){const X=S.roofX||{},RR=roofRects(g),gm=mc(0x9aa0a6),ckm=mc(0xa7553c);RR.forEach((r,ri)=>{const grp=new THREE.Group();
    const yAt=(p,x)=>{for(let q=1;q<p.length;q++)if(x<=p[q][0]){const t=(x-p[q-1][0])/(p[q][0]-p[q-1][0]);return p[q-1][1]+(p[q][1]-p[q-1][1])*t}return p[p.length-1][1]};
@@ -2108,7 +2109,7 @@ function drawFx(){if(!R)return;clear(FX);const H=+S.H,y0=Y0();let lab=null;
 
 /* ---------- ciclo ---------- */
 function ui(){$$('#ter button').forEach(b=>b.classList.toggle('on',b.dataset.t===S.ter));$('#tip').innerHTML=TER[S.ter].tip;
- $$('#wv button').forEach(b=>b.classList.toggle('on',b.dataset.wv===S.wv));$('#bWv').textContent=({techo:'🏠 Con techo',altos:'🧱 Altos',corte:'✂ Recortados',bajos:'▁ Bajos'}[S.wv]||'');$('#bWv').setAttribute('aria-label','Muros: '+({techo:'con techo',altos:'altos',corte:'recortados',bajos:'bajos'}[S.wv]||''));$('#cEnv').checked=!!S.env}
+ $$('#wv button').forEach(b=>b.classList.toggle('on',b.dataset.wv===S.wv));$('#bWv').textContent=({techo:S.roofOn?'🏠 Con techo':'🧱 Completo',altos:'🧱 Altos',corte:'✂ Recortados',bajos:'▁ Bajos'}[S.wv]||'');$('#bWv').setAttribute('aria-label','Muros: '+({techo:'con techo',altos:'altos',corte:'recortados',bajos:'bajos'}[S.wv]||''));$('#cEnv').checked=!!S.env}
 function commit(rp){save();G=geo();drawPlan();build3D();renderMat();ui();if(rp)renderPanel();renderSub();if(typeof updFlBar==='function')try{updFlBar()}catch(e){}}
 G=geo();save();syncInputs();setTool('cuarto');renderPanel();renderMat();ui();init3D();
 requestAnimationFrame(()=>{if(plan.clientWidth){fitVB();fitVB.done=1}drawPlan()});
@@ -2252,7 +2253,7 @@ window.__per=()=>({PER,perGo,perAct});
 /* ---------- galería de casas: las de la app + las publicadas en internet ---------- */
 const GURL='https://raw.githubusercontent.com/geisoncontreras/Contrucci-n-de-casas-simulador-/main/galeria/';let galOnline=null;
 function galLoad(j){snap();freshProject({});const skip=new Set(['region','snd','prices']);for(const k of Object.keys(DEF))if(j[k]!=null&&!skip.has(k))S[k]=JSON.parse(JSON.stringify(j[k]));
- S.walls=JSON.parse(JSON.stringify(j.walls||[]));S.ops=JSON.parse(JSON.stringify(j.ops||[]));S.labels=JSON.parse(JSON.stringify(j.labels||[]));S.furn=JSON.parse(JSON.stringify(j.furn||[]));S.dig=JSON.parse(JSON.stringify(j.dig||{}));
+ S.roofOn=j.roofOn;S.walls=JSON.parse(JSON.stringify(j.walls||[]));S.ops=JSON.parse(JSON.stringify(j.ops||[]));S.labels=JSON.parse(JSON.stringify(j.labels||[]));S.furn=JSON.parse(JSON.stringify(j.furn||[]));S.dig=JSON.parse(JSON.stringify(j.dig||{}));
  fix(S);sel=null;syncInputs();commit(true);fitVB();drawPlan();resetCam();galClose();$('#sheet').classList.add('hide');toast('Casa abierta. Cámbiala a tu gusto (↶ deshace)',3500)}
 function galClose(){const o=$('#galO');if(o)o.remove()}
 function galCard(g,on){const esc2=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
